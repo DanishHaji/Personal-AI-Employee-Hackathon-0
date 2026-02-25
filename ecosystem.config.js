@@ -18,13 +18,19 @@
  *   pm2 save
  */
 
-module.exports = {
-  apps: [
-    {
-      name: 'gmail-watcher',
-      script: 'src/watchers/gmail_watcher.py',
-      interpreter: 'python3',
-      cwd: __dirname,
+// Note: Gmail watcher is optional - can be disabled if credentials not available
+// Set GMAIL_ENABLED=false in .env to skip Gmail watcher
+const gmailEnabled = process.env.GMAIL_ENABLED !== 'false';
+
+const apps = [];
+
+// Gmail Watcher (OPTIONAL - only if credentials available)
+if (gmailEnabled) {
+  apps.push({
+    name: 'gmail-watcher',
+    script: 'src/watchers/gmail_watcher.py',
+    interpreter: 'python3',
+    cwd: __dirname,
 
       // Auto-restart settings
       autorestart: true,
@@ -51,72 +57,55 @@ module.exports = {
       kill_timeout: 5000,
       wait_ready: false,
       listen_timeout: 3000
-    },
+    });
+}
 
-    {
-      name: 'filesystem-watcher',
-      script: 'src/watchers/filesystem_watcher.py',
-      interpreter: 'python3',
-      cwd: __dirname,
+// Filesystem Watcher (ALWAYS ENABLED)
+apps.push({
+  name: 'filesystem-watcher',
+  script: 'src/watchers/filesystem_watcher.py',
+  interpreter: 'python3',
+  cwd: __dirname,
+  autorestart: true,
+  max_restarts: 10,
+  restart_delay: 5000,
+  min_uptime: 10000,
+  env: {
+    VAULT_PATH: process.env.VAULT_PATH || './vault',
+    PYTHONUNBUFFERED: '1'
+  },
+  error_file: './logs/pm2/filesystem-watcher-error.log',
+  out_file: './logs/pm2/filesystem-watcher-out.log',
+  log_date_format: 'YYYY-MM-DD HH:mm:ss',
+  merge_logs: true,
+  max_memory_restart: '200M',
+  kill_timeout: 5000,
+  wait_ready: false,
+  listen_timeout: 3000
+});
 
-      // Auto-restart settings
-      autorestart: true,
-      max_restarts: 10,
-      restart_delay: 5000,
-      min_uptime: 10000,
+// Orchestrator (ALWAYS ENABLED)
+apps.push({
+  name: 'orchestrator',
+  script: 'src/orchestrator.py',
+  interpreter: 'python3',
+  cwd: __dirname,
+  autorestart: true,
+  max_restarts: 10,
+  restart_delay: 5000,
+  min_uptime: 10000,
+  env: {
+    VAULT_PATH: process.env.VAULT_PATH || './vault',
+    PYTHONUNBUFFERED: '1'
+  },
+  error_file: './logs/pm2/orchestrator-error.log',
+  out_file: './logs/pm2/orchestrator-out.log',
+  log_date_format: 'YYYY-MM-DD HH:mm:ss',
+  merge_logs: true,
+  max_memory_restart: '200M',
+  kill_timeout: 5000,
+  wait_ready: false,
+  listen_timeout: 3000
+});
 
-      // Environment variables
-      env: {
-        VAULT_PATH: process.env.VAULT_PATH || './vault',
-        PYTHONUNBUFFERED: '1'
-      },
-
-      // Log settings
-      error_file: './logs/pm2/filesystem-watcher-error.log',
-      out_file: './logs/pm2/filesystem-watcher-out.log',
-      log_date_format: 'YYYY-MM-DD HH:mm:ss',
-      merge_logs: true,
-
-      // Resource limits
-      max_memory_restart: '200M',
-
-      // Stop gracefully
-      kill_timeout: 5000,
-      wait_ready: false,
-      listen_timeout: 3000
-    },
-
-    {
-      name: 'orchestrator',
-      script: 'src/orchestrator.py',
-      interpreter: 'python3',
-      cwd: __dirname,
-
-      // Auto-restart settings
-      autorestart: true,
-      max_restarts: 10,
-      restart_delay: 5000,
-      min_uptime: 10000,
-
-      // Environment variables
-      env: {
-        VAULT_PATH: process.env.VAULT_PATH || './vault',
-        PYTHONUNBUFFERED: '1'
-      },
-
-      // Log settings
-      error_file: './logs/pm2/orchestrator-error.log',
-      out_file: './logs/pm2/orchestrator-out.log',
-      log_date_format: 'YYYY-MM-DD HH:mm:ss',
-      merge_logs: true,
-
-      // Resource limits
-      max_memory_restart: '200M',
-
-      // Stop gracefully
-      kill_timeout: 5000,
-      wait_ready: false,
-      listen_timeout: 3000
-    }
-  ]
-};
+module.exports = { apps };
