@@ -24,6 +24,7 @@ from enum import Enum
 
 class ActionType(str, Enum):
     """Valid action types for audit logging."""
+    # Bronze Tier (Monitoring)
     EMAIL_DETECTED = "email_detected"
     FILE_DROPPED = "file_dropped"
     PLAN_CREATED = "plan_created"
@@ -33,14 +34,26 @@ class ActionType(str, Enum):
     SYSTEM_STOP = "system_stop"
     HEARTBEAT = "heartbeat"
 
+    # Silver Tier (Execution)
+    EMAIL_SEND = "email_send"
+    SOCIAL_POST = "social_post"
+    WHATSAPP_DETECT = "whatsapp_detect"
+    SCHEDULED_TASK = "scheduled_task"
+
 
 class Actor(str, Enum):
     """Valid actors for audit logging."""
+    # Bronze Tier (Monitoring)
     GMAIL_WATCHER = "gmail_watcher"
     FILESYSTEM_WATCHER = "filesystem_watcher"
     CLAUDE_CODE = "claude_code"
     ORCHESTRATOR = "orchestrator"
     HUMAN = "human"
+
+    # Silver Tier (Execution)
+    EXECUTOR = "executor"
+    SCHEDULER = "scheduler"
+    WHATSAPP_WATCHER = "whatsapp_watcher"
 
 
 class ApprovalStatus(str, Enum):

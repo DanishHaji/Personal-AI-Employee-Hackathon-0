@@ -1,18 +1,46 @@
-# Personal AI Employee - Bronze Tier MVP
+# Personal AI Employee - Silver Tier
 
-**Local-first autonomous agent for email triage, file processing, and AI-powered task planning**
+**Local-first autonomous agent with HITL execution capabilities**
 
 ## Overview
 
-The Bronze Tier MVP provides:
+A fully autonomous AI Employee system that monitors, plans, and executes tasks with Human-in-the-Loop approval.
+
+### Bronze Tier (Monitoring & Planning)
 - ✅ Automated Gmail monitoring (detects important emails within 2 minutes)
 - ✅ File drop processing via Obsidian vault /Inbox folder
 - ✅ AI-generated task plans using Claude Code
 - ✅ Real-time Dashboard in Obsidian showing pending actions
 
+### Silver Tier (Execution & Automation) **NEW**
+- ✅ **Email Sending**: Send and reply to emails via Gmail API with approval
+- ✅ **Social Media Posting**: Auto-post to LinkedIn, Facebook, Twitter
+- ✅ **WhatsApp Monitoring**: Monitor WhatsApp Business for incoming messages
+- ✅ **Scheduled Tasks**: Daily briefings, weekly summaries, custom automation
+
 ## Quick Start
 
-For detailed setup instructions, see: **[specs/001-bronze-tier-mvp/quickstart.md](specs/001-bronze-tier-mvp/quickstart.md)**
+### Bronze Tier (Monitoring)
+
+For detailed Bronze Tier setup instructions, see: **[specs/001-bronze-tier-mvp/quickstart.md](specs/001-bronze-tier-mvp/quickstart.md)**
+
+### Silver Tier (Execution) **NEW**
+
+For detailed Silver Tier setup instructions, see: **[SILVER_TIER_SETUP.md](SILVER_TIER_SETUP.md)**
+
+**Quick Setup**:
+```bash
+# 1. Install additional dependencies
+uv pip install apscheduler
+
+# 2. Configure MCP servers in .env (see SILVER_TIER_SETUP.md)
+
+# 3. Start Silver Tier processes
+pm2 start ecosystem.config.js
+
+# 4. Verify all processes running
+pm2 status
+```
 
 ### Prerequisites
 

@@ -40,6 +40,13 @@ Move a completed item to /Done/:
 Use vault-manager skill with action=move and file_path=/path/to/vault/Needs_Action/EMAIL_123.md
 ```
 
+### Create Social Post Action (Silver Tier - T052)
+Create a social media post in /Needs_Action/:
+
+```
+Use vault-manager skill with action=create_social_post, platforms=[linkedin, twitter], and content="Post content here"
+```
+
 ## Implementation: Read Action (T036)
 
 When `action=read`, parse and analyze the file:
@@ -348,6 +355,281 @@ new_path = vault.move_file(file_path, "Done")
 
 print(f"✅ Moved to: {new_path}")
 ```
+
+## Implementation: Create Social Post Action (T052)
+
+When `action=create_social_post`, create a social media post in /Needs_Action/:
+
+```python
+import sys
+import os
+from pathlib import Path
+from datetime import datetime
+
+sys.path.insert(0, str(Path.cwd()))
+
+from src.services.vault_service import VaultService
+from src.models.social_media_post import SocialMediaPost, Platform
+
+# Parse arguments
+platforms_list = arguments.get('platforms', [])  # ['linkedin', 'twitter', 'facebook']
+content = arguments.get('content', '')
+media_attachments = arguments.get('media_attachments', [])  # Optional
+scheduled_time = arguments.get('scheduled_time')  # Optional ISO timestamp
+
+# Get vault path from environment
+vault_path = Path(os.getenv('VAULT_PATH', '/path/to/vault'))
+vault = VaultService(vault_path)
+
+# Validate inputs
+if not platforms_list:
+    print("❌ Error: No platforms specified")
+    sys.exit(1)
+
+if not content:
+    print("❌ Error: No content provided")
+    sys.exit(1)
+
+# Convert platform strings to Platform enums
+try:
+    platforms = [Platform(p.lower()) for p in platforms_list]
+except ValueError as e:
+    print(f"❌ Error: Invalid platform - {e}")
+    sys.exit(1)
+
+# Create SocialMediaPost
+timestamp_int = int(datetime.now().timestamp())
+primary_platform = platforms[0].value
+post_id = f"POST_{primary_platform}_{timestamp_int}"
+
+post = SocialMediaPost.create(
+    post_id=post_id,
+    platforms=platforms,
+    content=content,
+    media_attachments=media_attachments if media_attachments else None,
+    scheduled_time=scheduled_time
+)
+
+# Validate content length against platform limits
+validation_results = post.validate_content_length()
+invalid_platforms = [p.value for p, is_valid in validation_results.items() if not is_valid]
+
+if invalid_platforms:
+    print(f"⚠️  Warning: Content exceeds limits for: {', '.join(invalid_platforms)}")
+    print(f"   Content length: {len(content)} characters")
+    print(f"   Platform limits:")
+    for platform in platforms:
+        limit = {
+            Platform.LINKEDIN: 3000,
+            Platform.FACEBOOK: 63206,
+            Platform.TWITTER: 280
+        }.get(platform, 0)
+        print(f"   - {platform.value}: {limit} chars")
+
+    # For Twitter, mention auto-threading
+    if Platform.TWITTER in platforms and len(content) > 280:
+        print(f"   Note: Twitter content will be auto-threaded into {len(post.split_into_tweets())} tweets")
+
+# Generate frontmatter and body
+frontmatter = post.to_yaml_frontmatter()
+body = post.content
+
+# Write to /Needs_Action/
+filename = f"{post_id}.md"
+file_path = vault.write_social_media_post(post_id, frontmatter, body, folder="Needs_Action")
+
+print(f"✅ Created social media post: {filename}")
+print(f"  - Post ID: {post_id}")
+print(f"  - Platforms: {', '.join([p.value for p in platforms])}")
+print(f"  - Content length: {len(content)} characters")
+print(f"  - Status: {post.status.value}")
+if scheduled_time:
+    print(f"  - Scheduled for: {scheduled_time}")
+if post.needs_thread():
+    print(f"  - Twitter threading: Yes ({len(post.split_into_tweets())} tweets)")
+print(f"  - File: {file_path}")
+
+# Return structured data
+{
+    "post_id": post_id,
+    "filename": filename,
+    "platforms": [p.value for p in platforms],
+    "content_length": len(content),
+    "status": post.status.value,
+    "file_path": str(file_path),
+    "needs_thread": post.needs_thread(),
+    "validation_passed": len(invalid_platforms) == 0
+}
+```
+
+**Usage Notes**:
+- Platforms must be one of: `linkedin`, `facebook`, `twitter`
+- Content will be validated against platform character limits:
+  - LinkedIn: 3,000 characters
+  - Facebook: 63,206 characters
+  - Twitter: 280 characters (auto-threads if longer)
+- Media attachments format:
+  ```python
+  media_attachments = [
+      {"url": "https://example.com/image.jpg", "type": "image", "alt_text": "Description"},
+      {"url": "https://example.com/video.mp4", "type": "video"}
+  ]
+  ```
+- Scheduled time must be ISO 8601 format: `2026-02-26T09:00:00Z`
+- Post is created in `/Needs_Action/` with status `draft`
+- User must manually move to `/Approved/` for execution
+
+## Implementation: Create WhatsApp Message (T069)
+
+When processing WhatsApp Business messages, create WhatsAppMessage entity:
+
+```python
+import sys
+import os
+from pathlib import Path
+from datetime import datetime
+
+sys.path.insert(0, str(Path.cwd()))
+
+from src.services.vault_service import VaultService
+from src.models.whatsapp_message import WhatsAppMessage, MessagePriority, MediaAttachment
+
+# Parse WhatsApp message data
+message_id = arguments.get('message_id')  # wamid.XXX
+sender_phone = arguments.get('sender_phone')  # +14155552671
+sender_name = arguments.get('sender_name')  # Optional
+message_content = arguments.get('message_content')
+timestamp = arguments.get('timestamp')  # ISO 8601
+priority = arguments.get('priority', 'medium')  # high, medium, low
+media_attachments = arguments.get('media_attachments', [])  # Optional
+
+# Get vault path from environment
+vault_path = Path(os.getenv('VAULT_PATH', '/path/to/vault'))
+vault = VaultService(vault_path)
+
+# Validate inputs
+if not message_id:
+    print("❌ Error: No message_id provided")
+    sys.exit(1)
+
+if not sender_phone:
+    print("❌ Error: No sender_phone provided")
+    sys.exit(1)
+
+if not message_content:
+    print("❌ Error: No message_content provided")
+    sys.exit(1)
+
+# Convert priority string to enum
+try:
+    priority_enum = MessagePriority(priority.lower())
+except ValueError:
+    print(f"⚠️  Warning: Invalid priority '{priority}', defaulting to MEDIUM")
+    priority_enum = MessagePriority.MEDIUM
+
+# Create WhatsAppMessage
+message = WhatsAppMessage.create(
+    message_id=message_id,
+    sender_phone=sender_phone,
+    message_content=message_content,
+    timestamp=timestamp,
+    sender_name=sender_name,
+    media_attachments=media_attachments,
+    priority=priority_enum
+)
+
+# Validate phone format
+is_valid, error_msg = WhatsAppMessage.validate_phone_format(sender_phone)
+if not is_valid:
+    print(f"❌ Error: Invalid phone format - {error_msg}")
+    sys.exit(1)
+
+# Generate frontmatter and body
+frontmatter = message.to_yaml_frontmatter()
+
+# Build body content
+body_lines = [
+    f"# WhatsApp Message from {message.sender_name or message.sender_phone}",
+    "",
+    f"**Received**: {message.timestamp}",
+    f"**Priority**: {message.priority.value}",
+    ""
+]
+
+if message.has_media():
+    body_lines.append(f"**Media Attachments**: {message.get_media_count()}")
+    body_lines.append("")
+    for i, media in enumerate(message.media_attachments, 1):
+        body_lines.append(
+            f"{i}. {media.media_type.value} - {media.mime_type} "
+            f"({media.file_size} bytes)"
+        )
+        if media.local_path:
+            body_lines.append(f"   Path: `{media.local_path}`")
+        if media.caption:
+            body_lines.append(f"   Caption: {media.caption}")
+    body_lines.append("")
+
+body_lines.append("## Message")
+body_lines.append("")
+body_lines.append(message.message_content)
+body_lines.append("")
+
+body = "\n".join(body_lines)
+
+# Write to /Needs_Action/
+# Use short message_id for filename (last 8 chars)
+short_id = message_id.split('.')[-1][:8] if '.' in message_id else message_id[:8]
+filename = f"WHATSAPP_{short_id}.md"
+file_path = vault_path / "Needs_Action" / filename
+
+vault.write_markdown_with_frontmatter(
+    file_path,
+    frontmatter,
+    body
+)
+
+print(f"✅ Created WhatsApp message entity: {filename}")
+print(f"  - Message ID: {message_id}")
+print(f"  - From: {sender_phone} ({sender_name or 'Unknown'})")
+print(f"  - Priority: {message.priority.value}")
+print(f"  - Media: {message.get_media_count()} attachments")
+print(f"  - File: {file_path}")
+
+# Return structured data
+{
+    "message_id": message_id,
+    "filename": filename,
+    "sender_phone": sender_phone,
+    "sender_name": sender_name,
+    "priority": message.priority.value,
+    "has_media": message.has_media(),
+    "media_count": message.get_media_count(),
+    "file_path": str(file_path)
+}
+```
+
+**Usage Notes**:
+- Phone must be in E.164 format: `+[country][number]` (no spaces, dashes)
+  - Valid: `+14155552671`, `+442071838750`, `+551155256325`
+  - Invalid: `4155552671`, `+1-415-555-2671`, `+1 415 555 2671`
+- Priority must be one of: `high`, `medium`, `low`
+- Media attachments format:
+  ```python
+  media_attachments = [
+      {
+          "media_id": "ABGGFlA5FpafAgo6tHcNmNjXmuSf",
+          "media_type": "image",
+          "mime_type": "image/jpeg",
+          "file_size": 245678,
+          "local_path": "/vault/Inbox/whatsapp_media.jpg",
+          "caption": "Optional caption"
+      }
+  ]
+  ```
+- Timestamp must be ISO 8601 format: `2026-02-25T14:30:00Z`
+- Message is created in `/Needs_Action/` with status `new`
+- User reviews and creates response plan using vault-manager `action=plan`
 
 ## Approval Detection Rules (T038)
 

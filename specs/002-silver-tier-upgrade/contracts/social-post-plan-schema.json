@@ -1,0 +1,121 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Social Media Post Plan",
+  "description": "Schema for social media post plan validation before execution",
+  "type": "object",
+  "required": ["type", "post_id", "platforms", "content", "status"],
+  "properties": {
+    "type": {
+      "type": "string",
+      "const": "social_media_post",
+      "description": "Plan type identifier"
+    },
+    "post_id": {
+      "type": "string",
+      "pattern": "^POST_[a-z]+_[0-9]+$",
+      "description": "Unique post ID (format: POST_[platform]_[timestamp])"
+    },
+    "platforms": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["linkedin", "facebook", "twitter"]
+      },
+      "minItems": 1,
+      "uniqueItems": true,
+      "description": "Target platforms for this post"
+    },
+    "content": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 63206,
+      "description": "Post text content (max 63206 for Facebook, will be validated per platform)"
+    },
+    "media_attachments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["media_type", "local_path", "filename"],
+        "properties": {
+          "media_type": {
+            "type": "string",
+            "enum": ["image", "video"],
+            "description": "Type of media"
+          },
+          "local_path": {
+            "type": "string",
+            "description": "Path to media file in vault/Inbox/"
+          },
+          "filename": {
+            "type": "string",
+            "description": "Media filename"
+          }
+        }
+      },
+      "description": "Media attachments for post (optional)"
+    },
+    "scheduled_time": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "Future posting time in ISO 8601 format, or null for immediate post"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["draft", "approved", "posted", "failed", "partial"],
+      "description": "Post status"
+    },
+    "platform_results": {
+      "type": "object",
+      "description": "Per-platform execution results (populated after posting)",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["status"],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["success", "failed"]
+          },
+          "post_url": {
+            "type": "string",
+            "format": "uri",
+            "description": "URL of posted content"
+          },
+          "post_id": {
+            "type": "string",
+            "description": "Platform-specific post ID"
+          },
+          "tweet_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "For Twitter threads: array of tweet IDs"
+          },
+          "error": {
+            "type": ["string", "null"],
+            "description": "Error message if posting failed"
+          }
+        }
+      }
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Plan creation timestamp"
+    },
+    "approved_at": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "Approval timestamp"
+    },
+    "posted_at": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "Actual posting timestamp"
+    },
+    "error_details": {
+      "type": ["string", "null"],
+      "description": "Error message if status is failed or partial"
+    }
+  }
+}
