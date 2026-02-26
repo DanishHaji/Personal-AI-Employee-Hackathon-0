@@ -1,0 +1,172 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Execution Log Entry",
+  "description": "Schema for execution log entries in daily audit logs",
+  "type": "object",
+  "required": [
+    "log_id",
+    "timestamp",
+    "action_type",
+    "actor",
+    "plan_id",
+    "target",
+    "parameters",
+    "approval_status",
+    "approved_by",
+    "result",
+    "duration_ms",
+    "retry_count"
+  ],
+  "properties": {
+    "log_id": {
+      "type": "string",
+      "pattern": "^LOG_[0-9]+_(email_send|social_post|whatsapp_detect|scheduled_task)$",
+      "description": "Unique log ID (format: LOG_[timestamp]_[action_type])"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Execution timestamp in ISO 8601 format"
+    },
+    "action_type": {
+      "type": "string",
+      "enum": ["email_send", "social_post", "whatsapp_detect", "scheduled_task"],
+      "description": "Type of action executed"
+    },
+    "actor": {
+      "type": "string",
+      "enum": ["executor", "scheduler", "whatsapp_watcher", "orchestrator"],
+      "description": "Component that executed the action"
+    },
+    "plan_id": {
+      "type": "string",
+      "description": "Reference to plan file that triggered this action"
+    },
+    "target": {
+      "type": "string",
+      "description": "Destination (email address, platform name, phone number, etc.)"
+    },
+    "parameters": {
+      "type": "object",
+      "description": "Action-specific parameters",
+      "properties": {
+        "recipient": {
+          "type": "string",
+          "description": "For email: recipient address"
+        },
+        "subject": {
+          "type": "string",
+          "description": "For email: subject line"
+        },
+        "body_preview": {
+          "type": "string",
+          "description": "For email: first 100 chars of body"
+        },
+        "platform": {
+          "type": "string",
+          "description": "For social: platform name"
+        },
+        "content_preview": {
+          "type": "string",
+          "description": "For social: first 100 chars of content"
+        },
+        "scheduled": {
+          "type": "boolean",
+          "description": "For social: whether post was scheduled"
+        },
+        "sender_phone": {
+          "type": "string",
+          "description": "For WhatsApp: sender phone number"
+        },
+        "message_preview": {
+          "type": "string",
+          "description": "For WhatsApp: first 100 chars of message"
+        },
+        "task_name": {
+          "type": "string",
+          "description": "For scheduled task: task name"
+        },
+        "output_file": {
+          "type": "string",
+          "description": "For scheduled task: generated output filename"
+        }
+      }
+    },
+    "approval_status": {
+      "type": "string",
+      "enum": ["approved", "auto_approved", "pending"],
+      "description": "Approval status of the action"
+    },
+    "approved_by": {
+      "type": "string",
+      "enum": ["human", "auto"],
+      "description": "Who approved the action"
+    },
+    "approval_timestamp": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "When approval was granted (for approved actions)"
+    },
+    "result": {
+      "type": "string",
+      "enum": ["success", "failure", "partial"],
+      "description": "Execution result"
+    },
+    "mcp_server": {
+      "type": ["string", "null"],
+      "description": "MCP server URL used for this action"
+    },
+    "response": {
+      "type": ["object", "null"],
+      "description": "MCP server response (varies by action_type)",
+      "properties": {
+        "message_id": {
+          "type": "string",
+          "description": "For email: Gmail message ID"
+        },
+        "thread_id": {
+          "type": "string",
+          "description": "For email: Gmail thread ID"
+        },
+        "post_url": {
+          "type": "string",
+          "description": "For social: posted content URL"
+        },
+        "post_id": {
+          "type": "string",
+          "description": "For social: platform-specific post ID"
+        },
+        "message_id": {
+          "type": "string",
+          "description": "For WhatsApp: message ID"
+        },
+        "media_downloaded": {
+          "type": "boolean",
+          "description": "For WhatsApp: whether media was downloaded"
+        },
+        "output_file": {
+          "type": "string",
+          "description": "For scheduled task: output filename"
+        },
+        "items_included": {
+          "type": "integer",
+          "description": "For scheduled task: number of items in output"
+        }
+      }
+    },
+    "error": {
+      "type": ["string", "null"],
+      "description": "Error message if result is failure"
+    },
+    "duration_ms": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Execution time in milliseconds"
+    },
+    "retry_count": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of retry attempts (0 = first attempt)"
+    }
+  }
+}

@@ -1,0 +1,132 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Scheduled Task Definition",
+  "description": "Schema for scheduled task definition in Company_Handbook.md",
+  "type": "object",
+  "required": [
+    "task_id",
+    "task_name",
+    "task_type",
+    "schedule_pattern",
+    "recurrence_rule",
+    "next_execution",
+    "enabled",
+    "output_path",
+    "created_at",
+    "updated_at"
+  ],
+  "properties": {
+    "task_id": {
+      "type": "string",
+      "pattern": "^TASK_[a-z_]+_[0-9]+$",
+      "description": "Unique task ID (format: TASK_[name]_[timestamp])"
+    },
+    "task_name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "description": "Human-readable task name"
+    },
+    "task_type": {
+      "type": "string",
+      "enum": ["briefing", "summary", "custom"],
+      "description": "Type of scheduled task"
+    },
+    "schedule_pattern": {
+      "type": "string",
+      "description": "Cron-like pattern (e.g., '0 9 * * *' for daily at 09:00)"
+    },
+    "recurrence_rule": {
+      "type": "object",
+      "required": ["frequency", "time"],
+      "properties": {
+        "frequency": {
+          "type": "string",
+          "enum": ["daily", "weekly", "custom"],
+          "description": "Recurrence frequency"
+        },
+        "time": {
+          "type": "string",
+          "pattern": "^([0-1][0-9]|2[0-3]):[0-5][0-9]$",
+          "description": "Execution time in HH:MM format (24-hour)"
+        },
+        "day_of_week": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 6,
+          "description": "Day of week for weekly tasks (0=Monday, 6=Sunday)"
+        },
+        "interval": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Interval in days for custom frequency (e.g., every 3 days)"
+        }
+      },
+      "description": "Parsed recurrence details"
+    },
+    "last_execution": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "Last successful execution timestamp"
+    },
+    "next_execution": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Calculated next execution timestamp"
+    },
+    "enabled": {
+      "type": "boolean",
+      "description": "Whether task is active (true) or disabled (false)"
+    },
+    "output_path": {
+      "type": "string",
+      "description": "Path where task output is created (e.g., '/Needs_Action/')"
+    },
+    "parameters": {
+      "type": "object",
+      "description": "Task-specific parameters (varies by task_type)",
+      "properties": {
+        "include_pending": {
+          "type": "boolean",
+          "description": "For briefings: include pending items"
+        },
+        "include_completed_24h": {
+          "type": "boolean",
+          "description": "For briefings: include items completed in last 24 hours"
+        },
+        "include_urgent": {
+          "type": "boolean",
+          "description": "For briefings: include urgent items"
+        },
+        "period": {
+          "type": "string",
+          "enum": ["day", "week", "month"],
+          "description": "For summaries: time period to summarize"
+        },
+        "metrics": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "completed_tasks",
+              "time_saved",
+              "emails_sent",
+              "posts_published"
+            ]
+          },
+          "description": "For summaries: metrics to include"
+        }
+      }
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Task definition creation timestamp"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Last modification timestamp"
+    }
+  }
+}

@@ -1,10 +1,17 @@
 /**
- * PM2 Ecosystem Configuration for Personal AI Employee - Bronze Tier MVP
+ * PM2 Ecosystem Configuration for Personal AI Employee - Silver Tier
  *
- * This configuration manages three background processes:
+ * This configuration manages six background processes:
+ *
+ * Bronze Tier (Monitoring):
  * - Gmail Watcher: Monitors Gmail inbox for important/urgent emails (FR-004)
  * - Filesystem Watcher: Monitors /Inbox/ folder for dropped files (FR-009)
  * - Orchestrator: Monitors /Needs_Action/ and triggers Claude Code (FR-015)
+ *
+ * Silver Tier (Execution):
+ * - Executor: Monitors /Approved/ folder and executes approved plans (US1)
+ * - Scheduler: Manages scheduled tasks and daily briefings (US4)
+ * - WhatsApp Watcher: Monitors WhatsApp Business API for messages (US3)
  *
  * Usage:
  *   pm2 start ecosystem.config.js
@@ -100,6 +107,85 @@ apps.push({
   },
   error_file: './logs/pm2/orchestrator-error.log',
   out_file: './logs/pm2/orchestrator-out.log',
+  log_date_format: 'YYYY-MM-DD HH:mm:ss',
+  merge_logs: true,
+  max_memory_restart: '200M',
+  kill_timeout: 5000,
+  wait_ready: false,
+  listen_timeout: 3000
+});
+
+// ========================================
+// SILVER TIER - Execution Processes
+// ========================================
+
+// Executor (ALWAYS ENABLED - Silver Tier US1)
+apps.push({
+  name: 'executor',
+  script: 'src/executor.py',
+  interpreter: 'python3',
+  cwd: __dirname,
+  autorestart: true,
+  max_restarts: 10,
+  restart_delay: 5000,
+  min_uptime: 10000,
+  env: {
+    VAULT_PATH: process.env.VAULT_PATH || './vault',
+    DRY_RUN: process.env.DRY_RUN || 'true',
+    PYTHONUNBUFFERED: '1'
+  },
+  error_file: './logs/pm2/executor-error.log',
+  out_file: './logs/pm2/executor-out.log',
+  log_date_format: 'YYYY-MM-DD HH:mm:ss',
+  merge_logs: true,
+  max_memory_restart: '200M',
+  kill_timeout: 5000,
+  wait_ready: false,
+  listen_timeout: 3000
+});
+
+// Scheduler (ALWAYS ENABLED - Silver Tier US4)
+apps.push({
+  name: 'scheduler',
+  script: 'src/scheduler.py',
+  interpreter: 'python3',
+  cwd: __dirname,
+  autorestart: true,
+  max_restarts: 10,
+  restart_delay: 5000,
+  min_uptime: 10000,
+  env: {
+    VAULT_PATH: process.env.VAULT_PATH || './vault',
+    DRY_RUN: process.env.DRY_RUN || 'true',
+    PYTHONUNBUFFERED: '1'
+  },
+  error_file: './logs/pm2/scheduler-error.log',
+  out_file: './logs/pm2/scheduler-out.log',
+  log_date_format: 'YYYY-MM-DD HH:mm:ss',
+  merge_logs: true,
+  max_memory_restart: '200M',
+  kill_timeout: 5000,
+  wait_ready: false,
+  listen_timeout: 3000
+});
+
+// WhatsApp Watcher (ALWAYS ENABLED - Silver Tier US3)
+apps.push({
+  name: 'whatsapp-watcher',
+  script: 'src/watchers/whatsapp_watcher.py',
+  interpreter: 'python3',
+  cwd: __dirname,
+  autorestart: true,
+  max_restarts: 10,
+  restart_delay: 5000,
+  min_uptime: 10000,
+  env: {
+    VAULT_PATH: process.env.VAULT_PATH || './vault',
+    DRY_RUN: process.env.DRY_RUN || 'true',
+    PYTHONUNBUFFERED: '1'
+  },
+  error_file: './logs/pm2/whatsapp-watcher-error.log',
+  out_file: './logs/pm2/whatsapp-watcher-out.log',
   log_date_format: 'YYYY-MM-DD HH:mm:ss',
   merge_logs: true,
   max_memory_restart: '200M',

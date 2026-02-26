@@ -60,6 +60,31 @@ def create_dashboard_template(vault_path: Path) -> None:
 - **File System Watcher**: ⚙️ Not Started (last heartbeat: N/A)
 - **Orchestrator**: ⚙️ Not Started
 
+## Execution Statistics (Silver Tier)
+
+**Email Sending:**
+- **Emails Sent Today**: 0 emails
+- **Last Execution**: Never (N/A)
+- **Success Rate**: 100% (0/0 successful)
+- **Rate Limit Status**: 500 emails remaining today
+
+**Social Media Posting:**
+- **Posts Published Today**: 0 posts
+- **Platforms**: None
+- **Last Post**: Never (N/A)
+- **Success Rate**: 100% (0/0 successful)
+
+**WhatsApp Messages:**
+- **Messages Received Today**: 0 messages
+- **High Priority**: 0 messages
+- **Last Message**: Never (N/A)
+
+**Scheduled Tasks:**
+- **Tasks Configured**: 0 tasks
+- **Executed Today**: 0 tasks
+- **Last Execution**: Never (N/A)
+- **Next Execution**: Not scheduled (N/A)
+
 ---
 
 *This dashboard is automatically updated by the AI Employee system*
@@ -82,7 +107,39 @@ See [README.md](../README.md) for complete setup instructions.
 
 def create_handbook_template(vault_path: Path) -> None:
     """Create Company_Handbook.md template with default rules (FR-003)."""
-    handbook_content = """# Company Handbook - AI Employee Rules
+    handbook_content = """---
+scheduled_tasks:
+  - task_id: daily_briefing_morning
+    task_name: "Morning Briefing"
+    task_type: daily_briefing
+    schedule_pattern: "0 9 * * *"
+    recurrence_rule: "Daily at 9:00 AM UTC"
+    enabled: false
+    output_path: "Needs_Action"
+    parameters:
+      include_urgent: true
+      include_completions: true
+
+  - task_id: weekly_summary_friday
+    task_name: "Weekly Summary"
+    task_type: weekly_summary
+    schedule_pattern: "0 17 * * 5"
+    recurrence_rule: "Weekly on Friday at 5:00 PM UTC"
+    enabled: false
+    output_path: "Needs_Action"
+    parameters:
+      include_metrics: true
+
+whatsapp_priority_contacts:
+  # - phone: "+14155552671"
+  #   name: "CEO - John Smith"
+  #   reason: "Executive leadership"
+  # - phone: "+442071838750"
+  #   name: "VIP Customer - Acme Corp"
+  #   reason: "Enterprise customer"
+---
+
+# Company Handbook - AI Employee Rules
 
 **Purpose**: This file defines the rules and guidelines for your AI Employee's behavior.
 

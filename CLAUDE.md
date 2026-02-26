@@ -208,3 +208,10 @@ Wait for consent; never auto-create ADRs. Group related decisions (stacks, authe
 
 ## Code Standards
 See `.specify/memory/constitution.md` for code quality, testing, performance, security, and architecture principles.
+
+## Active Technologies
+- Python 3.12+ (3.13+ recommended, 3.12.3 validated in Bronze Tier) (002-silver-tier-upgrade)
+- File-based only (Markdown with YAML frontmatter for entities, JSON for logs and state). No database (per constitution). (002-silver-tier-upgrade)
+
+## Recent Changes
+- 002-silver-tier-upgrade: Added Python 3.12+ (3.13+ recommended, 3.12.3 validated in Bronze Tier)
