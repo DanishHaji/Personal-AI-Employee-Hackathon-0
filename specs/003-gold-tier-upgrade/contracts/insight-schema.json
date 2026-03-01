@@ -1,0 +1,216 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ai-employee.local/schemas/insight.json",
+  "title": "Insight",
+  "description": "Weekly analytics insight with metrics and recommendations",
+  "type": "object",
+  "required": [
+    "insight_id",
+    "week_start",
+    "week_end",
+    "generated_at",
+    "metrics",
+    "patterns",
+    "recommendations"
+  ],
+  "properties": {
+    "ENCRYPTED_FIELDS": {
+      "type": "array",
+      "description": "List of encrypted field names (from BaseModel)",
+      "items": {
+        "type": "string"
+      }
+    },
+    "type": {
+      "type": "string",
+      "description": "Entity type identifier (from BaseModel)",
+      "enum": ["insight"]
+    },
+    "insight_id": {
+      "type": "string",
+      "pattern": "^INSIGHT_[a-zA-Z0-9_]+$",
+      "description": "Unique insight identifier"
+    },
+    "week_start": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Start of analysis period"
+    },
+    "week_end": {
+      "type": "string",
+      "format": "date-time",
+      "description": "End of analysis period"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when insight was generated"
+    },
+    "metrics": {
+      "type": "object",
+      "description": "Calculated productivity metrics",
+      "properties": {
+        "total_actions": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "actions_per_day": {
+          "type": "number",
+          "minimum": 0
+        },
+        "email_volume": {
+          "type": "object",
+          "properties": {
+            "sent": {"type": "integer"},
+            "received": {"type": "integer"}
+          }
+        },
+        "meeting_stats": {
+          "type": "object",
+          "properties": {
+            "total_meetings": {"type": "integer"},
+            "total_hours": {"type": "number"},
+            "avg_duration_minutes": {"type": "number"}
+          }
+        },
+        "response_times": {
+          "type": "object",
+          "properties": {
+            "avg_seconds": {"type": "number"},
+            "median_seconds": {"type": "number"}
+          }
+        },
+        "trust_effectiveness": {
+          "type": "object",
+          "properties": {
+            "auto_approved_count": {"type": "integer"},
+            "manual_review_count": {"type": "integer"},
+            "avg_effectiveness_score": {"type": "number"}
+          }
+        }
+      }
+    },
+    "patterns": {
+      "type": "array",
+      "description": "Detected patterns and anomalies",
+      "items": {
+        "type": "object",
+        "required": ["pattern_type", "description", "confidence"],
+        "properties": {
+          "pattern_type": {
+            "type": "string",
+            "enum": ["day_of_week", "time_of_day", "anomaly", "recurring", "trend"]
+          },
+          "description": {
+            "type": "string"
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "data": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      }
+    },
+    "recommendations": {
+      "type": "array",
+      "description": "Actionable recommendations",
+      "items": {
+        "type": "object",
+        "required": ["priority", "category", "recommendation", "rationale"],
+        "properties": {
+          "priority": {
+            "type": "string",
+            "enum": ["high", "medium", "low"]
+          },
+          "category": {
+            "type": "string",
+            "enum": ["productivity", "trust_rules", "scheduling", "budget", "relationships"]
+          },
+          "recommendation": {
+            "type": "string"
+          },
+          "rationale": {
+            "type": "string"
+          },
+          "action_items": {
+            "type": "array",
+            "items": {"type": "string"}
+          }
+        }
+      }
+    },
+    "anomalies": {
+      "type": "array",
+      "description": "Detected anomalies requiring attention",
+      "items": {
+        "type": "object",
+        "properties": {
+          "anomaly_type": {"type": "string"},
+          "severity": {"type": "string", "enum": ["low", "medium", "high"]},
+          "description": {"type": "string"},
+          "detected_value": {"type": "number"},
+          "expected_value": {"type": "number"}
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "insight_id": "INSIGHT_2026_03_01",
+      "week_start": "2026-02-24T00:00:00Z",
+      "week_end": "2026-03-01T23:59:59Z",
+      "generated_at": "2026-03-01T17:00:00Z",
+      "metrics": {
+        "total_actions": 147,
+        "actions_per_day": 21,
+        "email_volume": {
+          "sent": 32,
+          "received": 48
+        },
+        "meeting_stats": {
+          "total_meetings": 8,
+          "total_hours": 6.5,
+          "avg_duration_minutes": 48.75
+        },
+        "response_times": {
+          "avg_seconds": 3600,
+          "median_seconds": 1800
+        },
+        "trust_effectiveness": {
+          "auto_approved_count": 120,
+          "manual_review_count": 27,
+          "avg_effectiveness_score": 0.92
+        }
+      },
+      "patterns": [
+        {
+          "pattern_type": "day_of_week",
+          "description": "Peak activity on Tuesday and Thursday",
+          "confidence": 0.85,
+          "data": {
+            "tuesday": 35,
+            "thursday": 32
+          }
+        }
+      ],
+      "recommendations": [
+        {
+          "priority": "high",
+          "category": "trust_rules",
+          "recommendation": "Consider increasing trust level for email_send to team members",
+          "rationale": "100% approval rate over 30 actions with no rejections",
+          "action_items": [
+            "Review RULE_email_team trust_level",
+            "Consider upgrading from level 1 to level 2"
+          ]
+        }
+      ],
+      "anomalies": []
+    }
+  ]
+}
