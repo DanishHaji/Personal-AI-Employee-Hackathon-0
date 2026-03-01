@@ -1,0 +1,116 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ai-employee.local/schemas/trust-rule.json",
+  "title": "TrustRule",
+  "description": "Schema for trust rules that define which actions can be auto-approved without HITL review",
+  "type": "object",
+  "required": [
+    "rule_id",
+    "rule_name",
+    "action_type",
+    "trust_level",
+    "created_at",
+    "created_by",
+    "usage_count",
+    "effectiveness_score",
+    "enabled"
+  ],
+  "properties": {
+    "ENCRYPTED_FIELDS": {
+      "type": "array",
+      "description": "List of encrypted field names (from BaseModel)",
+      "items": {
+        "type": "string"
+      }
+    },
+    "type": {
+      "type": "string",
+      "description": "Entity type identifier (from BaseModel)",
+      "enum": ["trust_rule"]
+    },
+    "rule_id": {
+      "type": "string",
+      "description": "Unique identifier for the rule",
+      "pattern": "^RULE_[a-z0-9_]+$"
+    },
+    "rule_name": {
+      "type": "string",
+      "description": "Human-readable name for the rule",
+      "minLength": 3,
+      "maxLength": 100
+    },
+    "action_type": {
+      "type": "string",
+      "description": "Type of action this rule applies to",
+      "enum": [
+        "email_send",
+        "social_post",
+        "calendar_create",
+        "expense_record",
+        "document_generate",
+        "whatsapp_send",
+        "task_complete"
+      ]
+    },
+    "trust_level": {
+      "type": "integer",
+      "description": "Trust level: 0=Always approve, 1=Auto-approve, 2=Auto+notify, 3=Silent auto",
+      "minimum": 0,
+      "maximum": 3
+    },
+    "contact_filter": {
+      "type": ["array", "null"],
+      "description": "Allowed contacts (emails, phone numbers, or group names)",
+      "items": {
+        "type": "string"
+      }
+    },
+    "content_pattern": {
+      "type": ["string", "null"],
+      "description": "Regex pattern for content matching"
+    },
+    "time_pattern": {
+      "type": ["string", "null"],
+      "description": "Time-based filter"
+    },
+    "max_value": {
+      "type": ["number", "null"],
+      "description": "Maximum financial amount for auto-approval",
+      "minimum": 0
+    },
+    "created_at": {
+      "type": "string",
+      "description": "Rule creation timestamp (ISO 8601)",
+      "format": "date-time"
+    },
+    "created_by": {
+      "type": "string",
+      "description": "Who created the rule",
+      "enum": ["user"]
+    },
+    "last_used": {
+      "type": ["string", "null"],
+      "description": "Last time rule triggered auto-approval (ISO 8601)",
+      "format": "date-time"
+    },
+    "usage_count": {
+      "type": "integer",
+      "description": "Number of times rule has auto-approved",
+      "minimum": 0,
+      "default": 0
+    },
+    "effectiveness_score": {
+      "type": "number",
+      "description": "Approval accuracy (0.0-1.0)",
+      "minimum": 0.0,
+      "maximum": 1.0,
+      "default": 1.0
+    },
+    "enabled": {
+      "type": "boolean",
+      "description": "Whether rule is active",
+      "default": true
+    }
+  },
+  "additionalProperties": false
+}

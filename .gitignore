@@ -38,6 +38,12 @@ token.json
 # Logs (FR-017)
 /Logs/*.json
 
+# Gold Tier - Local data files
+/Calendar/events.json
+/Insights/*.json
+/Budgets/*.json
+*.encrypted
+
 # IDE
 .vscode/
 .idea/

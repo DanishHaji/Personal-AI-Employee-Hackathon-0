@@ -23,7 +23,7 @@ import sys
 import time
 import logging
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Any, Dict
 from datetime import datetime
 
 # Add project root to Python path
@@ -74,7 +74,8 @@ class ApprovedFolderHandler(FileSystemEventHandler):
     def __init__(
         self,
         executor_service: ExecutorService,
-        social_media_service: SocialMediaService
+        social_media_service: SocialMediaService,
+        trust_evaluator: Optional[Any] = None
     ):
         """
         Initialize handler.
@@ -82,9 +83,11 @@ class ApprovedFolderHandler(FileSystemEventHandler):
         Args:
             executor_service: ExecutorService instance for plan execution
             social_media_service: SocialMediaService instance for social posts
+            trust_evaluator: Optional TrustEvaluator for Gold Tier auto-approval
         """
         self.executor_service = executor_service
         self.social_media_service = social_media_service
+        self.trust_evaluator = trust_evaluator  # Gold Tier trust framework
         self.processing = set()  # Track files currently being processed
 
     def on_created(self, event):
@@ -137,6 +140,14 @@ class ApprovedFolderHandler(FileSystemEventHandler):
             # Determine plan type
             plan_type = frontmatter.get('type', '').lower()
 
+            # Gold Tier: Trust evaluation integration point (T012)
+            # If trust_evaluator is configured, check if plan can be auto-approved
+            should_execute = self._evaluate_trust(frontmatter, file_path)
+            if not should_execute:
+                # Plan moved to /Pending_Approval/ or requires manual approval
+                logger.info(f"Plan requires approval, not executing: {file_path.name}")
+                return
+
             if plan_type == 'email_send':
                 logger.info(f"Executing email plan: {file_path.name}")
                 success, exec_log = self.executor_service.execute_email_plan(file_path)
@@ -176,6 +187,49 @@ class ApprovedFolderHandler(FileSystemEventHandler):
         finally:
             # Remove from processing set
             self.processing.discard(file_path)
+
+    def _evaluate_trust(self, frontmatter: Dict[str, Any], file_path: Path) -> bool:
+        """
+        Evaluate whether plan can be auto-approved based on trust rules (Gold Tier).
+
+        Integration point for TrustEvaluator service (implemented in Phase 3).
+
+        Args:
+            frontmatter: Plan frontmatter with action details
+            file_path: Path to plan file
+
+        Returns:
+            bool: True if plan should execute (trusted or no evaluator),
+                  False if plan moved to /Pending_Approval/
+        """
+        # If no trust evaluator configured, default to execute (Silver Tier behavior)
+        if self.trust_evaluator is None:
+            return True
+
+        try:
+            # Call trust evaluator to check if action is trusted
+            is_trusted, rule_id = self.trust_evaluator.evaluate(frontmatter)
+
+            if is_trusted:
+                logger.info(
+                    f"Plan auto-approved by trust rule {rule_id}: {file_path.name}"
+                )
+                return True
+            else:
+                # Move to /Pending_Approval/ for manual review
+                logger.info(
+                    f"Plan not trusted, moving to /Pending_Approval/: {file_path.name}"
+                )
+                vault_service = self.executor_service.vault_service
+                vault_service.move_file(file_path, "Pending_Approval")
+                return False
+
+        except Exception as e:
+            logger.error(f"Trust evaluation error: {e} - requiring manual approval")
+            # On error, be conservative: require approval
+            vault_service = self.executor_service.vault_service
+            vault_service.move_file(file_path, "Pending_Approval")
+            return False
 
     def _execute_social_post(
         self,
@@ -376,11 +430,21 @@ class Executor:
             rate_limiter=self.rate_limiter
         )
 
+        # Initialize trust evaluator (Gold Tier US1)
+        try:
+            from src.services.trust_evaluator import TrustEvaluator
+            self.trust_evaluator = TrustEvaluator(vault_path=self.vault_path)
+            logger.info("Trust framework enabled - auto-approval active")
+        except Exception as e:
+            logger.warning(f"Trust evaluator initialization failed: {e} - falling back to HITL approval")
+            self.trust_evaluator = None
+
         # Initialize watchdog
         self.observer = Observer()
         self.event_handler = ApprovedFolderHandler(
             self.executor_service,
-            self.social_media_service
+            self.social_media_service,
+            self.trust_evaluator
         )
 
         logger.info(f"Executor initialized (vault: {self.vault_path})")

@@ -212,6 +212,8 @@ See `.specify/memory/constitution.md` for code quality, testing, performance, se
 ## Active Technologies
 - Python 3.12+ (3.13+ recommended, 3.12.3 validated in Bronze Tier) (002-silver-tier-upgrade)
 - File-based only (Markdown with YAML frontmatter for entities, JSON for logs and state). No database (per constitution). (002-silver-tier-upgrade)
+- Python 3.13+ (consistent with Bronze/Silver Tier) (003-gold-tier-upgrade)
+- Obsidian vault (Markdown files with YAML frontmatter, JSON for structured data) (003-gold-tier-upgrade)
 
 ## Recent Changes
 - 002-silver-tier-upgrade: Added Python 3.12+ (3.13+ recommended, 3.12.3 validated in Bronze Tier)

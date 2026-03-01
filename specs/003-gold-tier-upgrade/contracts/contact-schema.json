@@ -1,0 +1,130 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ai-employee.local/schemas/contact.json",
+  "title": "Contact",
+  "description": "CRM contact profile for relationship tracking",
+  "type": "object",
+  "required": [
+    "contact_id",
+    "name",
+    "email",
+    "first_contact_date",
+    "last_contact_date",
+    "interaction_count",
+    "relationship_strength",
+    "vip",
+    "encryption_status"
+  ],
+  "properties": {
+    "contact_id": {
+      "type": "string",
+      "pattern": "^CONTACT_[a-z0-9_]+$",
+      "description": "Unique identifier"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "description": "Full name"
+    },
+    "email": {
+      "type": "string",
+      "format": "email",
+      "description": "Primary email (unique key)"
+    },
+    "phone": {
+      "type": ["string", "null"],
+      "pattern": "^\\+[1-9]\\d{1,14}$",
+      "description": "Phone number in E.164 format"
+    },
+    "organization": {
+      "type": ["string", "null"],
+      "description": "Company/organization"
+    },
+    "title": {
+      "type": ["string", "null"],
+      "description": "Job title"
+    },
+    "first_contact_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When first interaction occurred"
+    },
+    "last_contact_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Most recent interaction"
+    },
+    "interaction_count": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Total interactions (emails, meetings, WhatsApp)"
+    },
+    "relationship_strength": {
+      "type": "integer",
+      "description": "Score: interaction_count * 10 - days_since_last_contact"
+    },
+    "vip": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether contact is VIP"
+    },
+    "important_dates": {
+      "type": ["array", "null"],
+      "items": {
+        "type": "object",
+        "required": ["date", "event"],
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "event": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Birthdays, anniversaries, etc."
+    },
+    "tags": {
+      "type": ["array", "null"],
+      "items": {
+        "type": "string"
+      },
+      "description": "Custom tags (client, vendor, team, executive, etc.)"
+    },
+    "notes": {
+      "type": ["string", "null"],
+      "description": "Freeform notes"
+    },
+    "encryption_status": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether contact data is encrypted"
+    }
+  },
+  "examples": [
+    {
+      "contact_id": "CONTACT_john_smith",
+      "name": "John Smith",
+      "email": "john.smith@example.com",
+      "phone": "+14155551234",
+      "organization": "Acme Corp",
+      "title": "VP Engineering",
+      "first_contact_date": "2025-11-15T10:00:00Z",
+      "last_contact_date": "2026-02-27T14:00:00Z",
+      "interaction_count": 28,
+      "relationship_strength": 176,
+      "vip": true,
+      "important_dates": [
+        {
+          "date": "2026-05-15",
+          "event": "Birthday"
+        }
+      ],
+      "tags": ["client", "executive", "decision_maker"],
+      "notes": null,
+      "encryption_status": false
+    }
+  ]
+}
