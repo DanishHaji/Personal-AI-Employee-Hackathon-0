@@ -33,20 +33,38 @@ logger = logging.getLogger(__name__)
 
 class Platform(Enum):
     """Supported platforms with rate limits."""
+    # Silver Tier
     GMAIL = "gmail"
     LINKEDIN = "linkedin"
     FACEBOOK = "facebook"
     TWITTER = "twitter"
     WHATSAPP = "whatsapp"
 
+    # Gold Tier (T124 - Phase 11)
+    GOOGLE_CALENDAR = "google_calendar"
+    OPENAI_WHISPER = "openai_whisper"
+    GOOGLE_VISION = "google_vision"
 
-# Platform rate limits (per day)
+
+# Platform rate limits
 PLATFORM_LIMITS = {
+    # Silver Tier (per day)
     Platform.GMAIL: 500,      # Gmail API: 500 emails/day
     Platform.LINKEDIN: 100,    # LinkedIn: 100 posts/day
     Platform.FACEBOOK: 200,    # Facebook: 200 posts/day
     Platform.TWITTER: 2400,    # Twitter: 2400 tweets/day
-    Platform.WHATSAPP: 1000    # WhatsApp: 1000 messages/day (inbound monitoring)
+    Platform.WHATSAPP: 1000,   # WhatsApp: 1000 messages/day (inbound monitoring)
+
+    # Gold Tier (T124 - Phase 11)
+    Platform.GOOGLE_CALENDAR: 1_000_000,  # Google Calendar: 1M queries/day
+    Platform.OPENAI_WHISPER: 50,           # Whisper API: 50 req/min (converted to daily: 72,000)
+    Platform.GOOGLE_VISION: 1800,          # Vision API: 1800 req/min (converted to daily: 2,592,000)
+}
+
+# Per-minute limits for high-frequency Gold Tier APIs
+PER_MINUTE_LIMITS = {
+    Platform.OPENAI_WHISPER: 50,    # 50 requests per minute
+    Platform.GOOGLE_VISION: 1800,   # 1800 requests per minute
 }
 
 

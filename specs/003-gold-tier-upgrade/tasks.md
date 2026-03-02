@@ -272,8 +272,8 @@ description: "Task breakdown for Gold Tier - Autonomous AI Employee"
 - [X] T120 [P] Add Gold Tier troubleshooting guide to docs/ (trust rules, calendar quota, OCR accuracy)
 - [X] T121 [P] Create .env.example with all Gold Tier API keys (GOOGLE_CALENDAR_CREDENTIALS_PATH, OPENAI_API_KEY, ZOOM_API_KEY)
 - [X] T122 Update PM2 ecosystem.config.js with new Gold Tier processes (analytics_engine, suggestion_engine, calendar_watcher)
-- [ ] T123 [P] Add performance monitoring for trust evaluation (<10ms target)
-- [ ] T124 [P] Add rate limiting for Google Calendar API (1M queries/day) and Whisper API (50 req/min)
+- [X] T123 [P] Add performance monitoring for trust evaluation (<10ms target)
+- [X] T124 [P] Add rate limiting for Google Calendar API (1M queries/day) and Whisper API (50 req/min)
 - [X] T125 Create encryption key backup instructions in docs/
 - [ ] T126 [P] Add data export functionality for GDPR compliance (FR-044)
 - [ ] T127 Run full end-to-end integration test from quickstart.md (auto-reply → meeting schedule → notes → follow-up)
