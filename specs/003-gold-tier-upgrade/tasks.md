@@ -242,22 +242,22 @@ description: "Task breakdown for Gold Tier - Autonomous AI Employee"
 
 ### Implementation for User Story 8
 
-- [ ] T102 [P] [US8] Create Expense model in src/models/expense.py with OCR confidence tracking
-- [ ] T103 [P] [US8] Create Budget model in src/models/budget.py with monthly allocations
-- [ ] T104 [P] [US8] Create src/services/expense_service.py with EasyOCR integration
-- [ ] T105 [P] [US8] Create src/services/budget_service.py with budget tracking and alert logic
-- [ ] T106 [US8] Implement receipt detection in Gmail watcher for expense processing
-- [ ] T107 [US8] Implement OCR text extraction from receipts (PDF and images) in expense_service.py
-- [ ] T108 [US8] Implement expense parsing with Claude Code in expense_service.py (amount, vendor, date, category)
-- [ ] T109 [US8] Add category keyword matching in expense_service.py
-- [ ] T110 [US8] Implement budget validation in budget_service.py (check against monthly limits)
-- [ ] T111 [US8] Add budget threshold alerts (80% spending) to /Needs_Action/
-- [ ] T112 [US8] Implement unusual expense detection (3x category average) in expense_service.py
-- [ ] T113 [US8] Create expense entity files in /Expenses/YYYY-MM/ with encryption
-- [ ] T114 [US8] Update budget JSON files in /Budgets/YYYY-MM.json
-- [ ] T115 [US8] Create .claude/commands/expense-tracker.md agent skill
-- [ ] T116 [US8] Add Google Vision API fallback for low OCR confidence (<0.75)
-- [ ] T117 [US8] Create pytest tests in tests/unit/test_expense_service.py for OCR parsing and budget validation
+- [X] T102 [P] [US8] Create Expense model in src/models/expense.py with OCR confidence tracking
+- [X] T103 [P] [US8] Create Budget model in src/models/budget.py with monthly allocations
+- [X] T104 [P] [US8] Create src/services/expense_service.py with EasyOCR integration
+- [X] T105 [P] [US8] Create src/services/budget_service.py with budget tracking and alert logic
+- [X] T106 [US8] Implement receipt detection in Gmail watcher for expense processing
+- [X] T107 [US8] Implement OCR text extraction from receipts (PDF and images) in expense_service.py
+- [X] T108 [US8] Implement expense parsing with Claude Code in expense_service.py (amount, vendor, date, category)
+- [X] T109 [US8] Add category keyword matching in expense_service.py
+- [X] T110 [US8] Implement budget validation in budget_service.py (check against monthly limits)
+- [X] T111 [US8] Add budget threshold alerts (80% spending) to /Needs_Action/
+- [X] T112 [US8] Implement unusual expense detection (3x category average) in expense_service.py
+- [X] T113 [US8] Create expense entity files in /Expenses/YYYY-MM/ with encryption
+- [X] T114 [US8] Update budget JSON files in /Budgets/YYYY-MM.json
+- [X] T115 [US8] Create .claude/commands/expense-tracker.md agent skill
+- [X] T116 [US8] Add Google Vision API fallback for low OCR confidence (<0.75)
+- [X] T117 [US8] Create pytest tests in tests/unit/test_expense_service.py for OCR parsing and budget validation
 - [ ] T118 [US8] Run quickstart.md US8 integration test (Test Scenario 8.1)
 
 **Checkpoint**: Financial tracking complete - expenses auto-tracked, budgets monitored, alerts generated

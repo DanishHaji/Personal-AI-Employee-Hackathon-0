@@ -47,6 +47,14 @@ from src.services.vault_service import VaultService
 from src.models.email import Email, create_email_filename
 from src.services.logger_service import Result
 
+# Gold Tier US8 - Receipt processing
+try:
+    from src.services.expense_service import ExpenseService
+    from src.services.budget_service import BudgetService
+    EXPENSE_TRACKING_AVAILABLE = True
+except ImportError:
+    EXPENSE_TRACKING_AVAILABLE = False
+
 
 class GmailWatcher(BaseWatcher):
     """Watcher that monitors Gmail inbox for important/urgent emails."""
@@ -81,14 +89,35 @@ class GmailWatcher(BaseWatcher):
         # Initialize Vault service
         self.vault_service = VaultService(vault_path)
 
+        # Gold Tier US8 - Initialize expense tracking services
+        self.expense_service = None
+        self.budget_service = None
+        if EXPENSE_TRACKING_AVAILABLE:
+            try:
+                self.expense_service = ExpenseService(vault_path=vault_path)
+                self.budget_service = BudgetService(vault_path=vault_path)
+                print(f"[GmailWatcher] Expense tracking enabled")
+            except Exception as e:
+                print(f"[GmailWatcher] Warning: Could not initialize expense tracking: {e}")
+
         # Urgent keywords for priority detection (FR-004)
         self.urgent_keywords = urgent_keywords or [
             "urgent", "asap", "invoice", "payment", "help"
         ]
 
+        # Receipt detection keywords (Gold Tier US8)
+        self.receipt_keywords = [
+            "receipt", "invoice", "bill", "payment confirmation",
+            "order confirmation", "purchase", "transaction"
+        ]
+
         # State file for duplicate detection (FR-007)
         self.state_file = Path(".watcher_state.json")
         self.processed_email_ids: Set[str] = self._load_state()
+
+        # Receipts directory (Gold Tier US8)
+        self.receipts_dir = Path(vault_path) / "Receipts"
+        self.receipts_dir.mkdir(parents=True, exist_ok=True)
 
         print(f"[GmailWatcher] Initialized")
         print(f"  - Vault: {vault_path}")
@@ -146,6 +175,10 @@ class GmailWatcher(BaseWatcher):
                         priority="high" if email_data['has_important'] else "medium",
                         result=Result.SUCCESS
                     )
+
+                    # Gold Tier US8 - Check for receipt attachments (T106)
+                    if self.expense_service and self._is_receipt_email(email_data):
+                        self._process_receipt_attachments(email_data)
 
             # Save state after processing
             if new_emails_count > 0:
@@ -283,6 +316,152 @@ class GmailWatcher(BaseWatcher):
 
         # Return as-is if no angle brackets (already just email)
         return from_field
+
+    def _is_receipt_email(self, email_data: Dict[str, Any]) -> bool:
+        """
+        Check if email likely contains a receipt.
+
+        Gold Tier US8 - T106: Receipt detection in Gmail watcher
+
+        Args:
+            email_data: Email metadata
+
+        Returns:
+            bool: True if email likely contains receipt
+        """
+        # Check subject for receipt keywords
+        subject_lower = email_data['subject'].lower()
+        for keyword in self.receipt_keywords:
+            if keyword in subject_lower:
+                return True
+
+        # Check snippet for receipt keywords
+        snippet_lower = email_data.get('snippet', '').lower()
+        for keyword in self.receipt_keywords:
+            if keyword in snippet_lower:
+                return True
+
+        return False
+
+    def _process_receipt_attachments(self, email_data: Dict[str, Any]) -> None:
+        """
+        Process receipt attachments from an email.
+
+        Gold Tier US8 - T106: Receipt detection and processing
+
+        Args:
+            email_data: Email metadata
+        """
+        try:
+            email_id = email_data['id']
+
+            # Get full email message with attachments
+            message = self.gmail_service.service.users().messages().get(
+                userId='me',
+                id=email_id
+            ).execute()
+
+            # Check for attachments
+            if 'parts' not in message.get('payload', {}):
+                return
+
+            # Current month for budget allocation
+            current_month = datetime.now().strftime("%Y-%m")
+
+            # Process each attachment
+            for part in message['payload']['parts']:
+                # Check if part is an attachment
+                if part.get('filename') and part.get('body', {}).get('attachmentId'):
+                    filename = part['filename']
+                    attachment_id = part['body']['attachmentId']
+
+                    # Check if it's a receipt file (PDF or image)
+                    if self._is_receipt_attachment(filename):
+                        print(f"[GmailWatcher] Found receipt attachment: {filename}")
+
+                        # Download attachment
+                        attachment = self.gmail_service.service.users().messages().attachments().get(
+                            userId='me',
+                            messageId=email_id,
+                            id=attachment_id
+                        ).execute()
+
+                        # Save to Receipts directory
+                        import base64
+                        file_data = base64.urlsafe_b64decode(attachment['data'].encode('UTF-8'))
+
+                        timestamp = datetime.now().strftime("%Y-%m-%d_%H%M%S")
+                        safe_filename = f"{timestamp}_{filename}"
+                        receipt_path = self.receipts_dir / safe_filename
+
+                        with open(receipt_path, 'wb') as f:
+                            f.write(file_data)
+
+                        print(f"[GmailWatcher] Saved receipt: {receipt_path}")
+
+                        # Process with ExpenseService
+                        try:
+                            expense = self.expense_service.create_expense_from_receipt(
+                                receipt_path=receipt_path,
+                                month=current_month,
+                                auto_approve=True
+                            )
+
+                            # Update budget
+                            if self.budget_service:
+                                self.budget_service.add_expense_to_budget(
+                                    expense=expense,
+                                    send_alerts=True
+                                )
+
+                            print(
+                                f"[GmailWatcher] Created expense: {expense.expense_id} "
+                                f"(${expense.amount}, {expense.approval_status.value})"
+                            )
+
+                        except Exception as e:
+                            print(f"[GmailWatcher] Error processing receipt: {e}", file=sys.stderr)
+                            # Log but don't fail - email entity was already created
+
+        except Exception as e:
+            print(f"[GmailWatcher] Error processing receipt attachments: {e}", file=sys.stderr)
+            # Log but don't fail - email entity was already created
+            self.logger.log_error(
+                actor="gmail_watcher",
+                error_message=str(e),
+                error_type=type(e).__name__,
+                target=f"receipt_processing_{email_data.get('id', 'unknown')}"
+            )
+
+    def _is_receipt_attachment(self, filename: str) -> bool:
+        """
+        Check if attachment filename indicates a receipt.
+
+        Args:
+            filename: Attachment filename
+
+        Returns:
+            bool: True if likely a receipt
+        """
+        filename_lower = filename.lower()
+
+        # Check file extension
+        receipt_extensions = ['.pdf', '.png', '.jpg', '.jpeg', '.gif']
+        if not any(filename_lower.endswith(ext) for ext in receipt_extensions):
+            return False
+
+        # Check filename for receipt keywords
+        receipt_filename_keywords = [
+            'receipt', 'invoice', 'bill', 'payment', 'order', 'transaction'
+        ]
+
+        for keyword in receipt_filename_keywords:
+            if keyword in filename_lower:
+                return True
+
+        # If it's a PDF or image but no receipt keywords, still consider it
+        # (many receipts have generic names like "document.pdf")
+        return True
 
     def _handle_credential_expiration(self, error: HttpError) -> None:
         """
