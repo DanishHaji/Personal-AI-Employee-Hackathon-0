@@ -1,0 +1,14 @@
+FROM: receipts@zoom.us
+SUBJECT: Receipt - Zoom Pro Subscription
+DATE: 2026-03-04T15:00:00
+
+Thank you for your payment!
+
+Amount: $14.99
+Date: March 4, 2026
+Plan: Zoom Pro Monthly
+Category: Software/Communication
+
+Your subscription is active until April 4, 2026.
+
+Thank you for choosing Zoom!

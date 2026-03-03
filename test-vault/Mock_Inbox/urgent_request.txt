@@ -1,0 +1,12 @@
+FROM: boss@company.com
+SUBJECT: Urgent: Budget Approval Needed
+DATE: 2026-03-03T15:40:00
+
+Hi,
+
+We need your approval on the Q2 budget ASAP.
+
+Please review the attached spreadsheet and let me know by end of day.
+
+Thanks,
+Management

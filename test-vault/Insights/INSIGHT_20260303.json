@@ -1,0 +1,52 @@
+{
+  "insight_id": "INSIGHT_20260303",
+  "week_start": "2026-03-01T00:00:00",
+  "week_end": "2026-03-07T23:59:59",
+  "generated_at": "2026-03-03T15:39:06.570016",
+  "metrics": {
+    "total_emails": 4,
+    "emails_per_day": 1.3,
+    "response_time_avg_hours": 2.5,
+    "meetings_scheduled": 1,
+    "expenses_tracked": 1,
+    "total_spend": 45.99
+  },
+  "patterns": [
+    {
+      "pattern_type": "email_volume",
+      "description": "Email activity detected from 4 different sources",
+      "confidence": 0.85,
+      "data": {
+        "sources": [
+          "colleague@example.com",
+          "alice.johnson@startup.com",
+          "receipts@adobe.com",
+          "boss@company.com"
+        ]
+      }
+    }
+  ],
+  "recommendations": [
+    {
+      "priority": "high",
+      "category": "productivity",
+      "recommendation": "Consider setting up auto-reply for meeting requests from known contacts",
+      "rationale": "Meeting requests detected that could be handled automatically",
+      "action_items": [
+        "Review meeting request from colleague@example.com",
+        "Add trust rule for meeting scheduling"
+      ]
+    },
+    {
+      "priority": "medium",
+      "category": "relationships",
+      "recommendation": "Follow up with Alice Johnson regarding partnership opportunity",
+      "rationale": "New contact introduction received, requires response",
+      "action_items": [
+        "Research TechStartup Inc.",
+        "Schedule introductory call"
+      ]
+    }
+  ],
+  "anomalies": []
+}

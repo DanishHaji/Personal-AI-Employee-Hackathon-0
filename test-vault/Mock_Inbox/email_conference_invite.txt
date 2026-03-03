@@ -1,0 +1,20 @@
+FROM: events@techconf.com
+SUBJECT: You're invited: AI Summit 2026
+DATE: 2026-03-04T14:00:00
+
+Dear Innovator,
+
+You're invited to AI Summit 2026!
+
+Date: April 15-17, 2026
+Location: San Francisco, CA
+Early Bird Ticket: $499 (save $200)
+
+Register by March 10 to save!
+
+Topics:
+- Large Language Models
+- AI Ethics
+- Production ML Systems
+
+Looking forward to seeing you there!

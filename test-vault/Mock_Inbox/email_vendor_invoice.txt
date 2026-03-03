@@ -1,0 +1,16 @@
+FROM: billing@aws.amazon.com
+SUBJECT: Invoice for AWS Services - March 2026
+DATE: 2026-03-04T10:00:00
+
+Your invoice for AWS services is ready.
+
+Amount Due: $289.50
+Due Date: March 15, 2026
+Account: 1234-5678-9012
+
+Services:
+- EC2 Instances: $150.00
+- S3 Storage: $45.50
+- RDS Database: $94.00
+
+Please pay by due date to avoid service interruption.

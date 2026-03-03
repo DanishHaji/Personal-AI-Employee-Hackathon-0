@@ -1,0 +1,103 @@
+{
+  "insight_id": "INSIGHT_20260304",
+  "week_start": "2026-03-01T00:00:00",
+  "week_end": "2026-03-07T23:59:59",
+  "generated_at": "2026-03-03T23:54:31.833104",
+  "metrics": {
+    "total_emails": 10,
+    "emails_per_day": 3.3,
+    "response_time_avg_hours": 2.5,
+    "meetings_scheduled": 2,
+    "expenses_tracked": 3,
+    "total_spend": 350.48,
+    "contacts_added": 4,
+    "documents_generated": 3
+  },
+  "patterns": [
+    {
+      "pattern_type": "day_of_week",
+      "description": "Higher email volume on Mondays and Thursdays",
+      "confidence": 0.75,
+      "data": {
+        "monday": 4,
+        "thursday": 6
+      }
+    },
+    {
+      "pattern_type": "email_category",
+      "description": "Mix of client feedback, internal comms, and vendor invoices",
+      "confidence": 0.85,
+      "data": {
+        "client_emails": 1,
+        "internal_emails": 1,
+        "vendor_invoices": 2,
+        "receipts": 2,
+        "opportunities": 2,
+        "meetings": 2
+      }
+    },
+    {
+      "pattern_type": "expense_trend",
+      "description": "Software and cloud expenses within budget (22% used)",
+      "confidence": 0.9,
+      "data": {
+        "total_budget": 1500,
+        "spent": 350.48,
+        "percent": 23.4
+      }
+    }
+  ],
+  "recommendations": [
+    {
+      "priority": "high",
+      "category": "productivity",
+      "recommendation": "Set up auto-reply for team standup confirmations",
+      "rationale": "Daily standup emails detected - can be automated",
+      "action_items": [
+        "Create trust rule for standup confirmations",
+        "Template standard response"
+      ]
+    },
+    {
+      "priority": "high",
+      "category": "budget",
+      "recommendation": "Review cloud services spending - trending up",
+      "rationale": "AWS invoice $289.50 higher than usual",
+      "action_items": [
+        "Audit EC2 instances for unused resources",
+        "Consider reserved instances for savings"
+      ]
+    },
+    {
+      "priority": "medium",
+      "category": "relationships",
+      "recommendation": "Follow up with new contacts within 48 hours",
+      "rationale": "3 new contacts added this week requiring follow-up",
+      "action_items": [
+        "Send thank you to John Smith for positive feedback",
+        "Schedule call with Alice Johnson (partnership)",
+        "Respond to Mike Johnson (recruiter opportunity)"
+      ]
+    },
+    {
+      "priority": "medium",
+      "category": "scheduling",
+      "recommendation": "Block calendar time for AI Summit preparation",
+      "rationale": "Conference invitation detected - early action saves $200",
+      "action_items": [
+        "Review proposal approval status",
+        "Book flights if approved",
+        "Prepare learning objectives"
+      ]
+    }
+  ],
+  "anomalies": [
+    {
+      "anomaly_type": "expense_spike",
+      "severity": "medium",
+      "description": "AWS invoice 30% higher than previous month",
+      "detected_value": 289.5,
+      "expected_value": 220.0
+    }
+  ]
+}

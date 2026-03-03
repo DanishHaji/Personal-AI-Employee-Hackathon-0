@@ -1,0 +1,16 @@
+FROM: colleague@example.com
+SUBJECT: Meeting Request - Q2 Planning
+DATE: 2026-03-03T10:00:00
+
+Hi,
+
+Can we schedule a meeting to discuss Q2 planning?
+
+I'm available:
+- Tomorrow 2pm
+- Thursday 10am
+
+Let me know what works.
+
+Thanks,
+John

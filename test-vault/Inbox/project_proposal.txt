@@ -1,0 +1,13 @@
+Project Proposal: AI Integration
+
+Overview:
+We propose to integrate AI capabilities into our existing platform.
+
+Budget: $50,000
+Timeline: 3 months
+Team: 5 engineers
+
+Next Steps:
+1. Review proposal
+2. Schedule kickoff meeting
+3. Assign resources

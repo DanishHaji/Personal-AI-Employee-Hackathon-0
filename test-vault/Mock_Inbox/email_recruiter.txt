@@ -1,0 +1,18 @@
+FROM: mike.johnson@recruiters.com
+SUBJECT: Exciting opportunity - Senior AI Engineer
+DATE: 2026-03-04T16:00:00
+
+Hi,
+
+I came across your profile and was impressed by your background.
+
+We have an exciting opportunity for a Senior AI Engineer at a 
+fast-growing startup in the Bay Area.
+
+Compensation: $180k-$220k + equity
+Remote: Hybrid (3 days/week)
+
+Interested? Let's chat!
+
+Mike Johnson
+Technical Recruiter

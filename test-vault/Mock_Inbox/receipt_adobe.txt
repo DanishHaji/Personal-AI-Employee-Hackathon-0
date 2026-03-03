@@ -1,0 +1,12 @@
+FROM: receipts@adobe.com
+SUBJECT: Receipt - Adobe Creative Cloud
+DATE: 2026-03-03T15:30:00
+
+Your receipt for Adobe Creative Cloud subscription
+
+Amount: $45.99
+Date: 2026-03-03
+Category: Software
+Vendor: Adobe Systems Inc.
+
+Thank you for your business!

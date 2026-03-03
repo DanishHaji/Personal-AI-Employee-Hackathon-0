@@ -1,0 +1,16 @@
+FROM: alice.johnson@startup.com
+SUBJECT: Introduction - Partnership Opportunity
+DATE: 2026-03-03T15:35:00
+
+Hi,
+
+I'm Alice Johnson from TechStartup Inc.
+
+I wanted to reach out regarding a potential partnership opportunity.
+
+Would you be interested in a quick call next week?
+
+Best regards,
+Alice Johnson
+CEO, TechStartup Inc.
+Phone: +1-555-0123

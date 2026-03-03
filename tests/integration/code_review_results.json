@@ -1,0 +1,69 @@
+{
+  "consistency": {
+    "passed": false,
+    "issues": [
+      "Missing logger in: gmail_service.py, logger_service.py, vault_service.py"
+    ],
+    "services_checked": 23
+  },
+  "error_handling": {
+    "passed": true,
+    "issues": [],
+    "warnings": 24
+  },
+  "documentation": {
+    "passed": true,
+    "class_coverage": 100.0,
+    "function_coverage": 99.73333333333333,
+    "total_classes": 85,
+    "total_functions": 375
+  },
+  "type_hints": {
+    "passed": true,
+    "coverage": 89.24731182795699,
+    "total_functions": 186
+  },
+  "test_coverage": {
+    "passed": false,
+    "coverage": 34.78260869565217,
+    "missing_tests": [
+      "social_media_service",
+      "gmail_service",
+      "mcp_client",
+      "audit_service",
+      "whatsapp_service",
+      "encryption_service",
+      "gdpr_export",
+      "logger_service",
+      "contact_service",
+      "rate_limiter",
+      "transcription_service",
+      "executor_service",
+      "vault_service",
+      "plan_validator",
+      "scheduler_service"
+    ],
+    "total_services": 23
+  },
+  "security": {
+    "passed": false,
+    "issues": [
+      "mcp_client.py: Potential hardcoded API key",
+      "transcription_service.py: Potential hardcoded API key"
+    ],
+    "warnings": [
+      "calendar_service.py: Potential SQL injection risk with f-string",
+      "gmail_service.py: Potential SQL injection risk with f-string",
+      "gmail_watcher.py: Potential SQL injection risk with f-string",
+      "gmail_watcher.py: Password handling without encryption"
+    ]
+  },
+  "naming": {
+    "passed": true,
+    "issues": []
+  },
+  "imports": {
+    "passed": true,
+    "files_checked": 57
+  }
+}
