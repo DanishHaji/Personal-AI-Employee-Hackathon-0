@@ -26,6 +26,7 @@ Usage:
 
 import logging
 import yaml
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, List, Tuple, Optional
@@ -33,6 +34,9 @@ from typing import Dict, Any, List, Tuple, Optional
 from src.models.trust_rule import TrustRule
 
 logger = logging.getLogger(__name__)
+
+# Performance monitoring
+TRUST_EVAL_TARGET_MS = 10  # Target: <10ms per evaluation
 
 
 class TrustEvaluator:
@@ -149,6 +153,8 @@ class TrustEvaluator:
         """
         Evaluate whether an action plan can be auto-approved.
 
+        Performance Target: <10ms per evaluation (T123 - Phase 11)
+
         Args:
             plan_frontmatter: Plan frontmatter dict containing:
                 - type: Action type (email_send, social_post, etc.)
@@ -161,6 +167,9 @@ class TrustEvaluator:
                 - is_trusted: True if action should be auto-approved
                 - rule_id: ID of matching rule (None if no match)
         """
+        # Performance monitoring (T123)
+        start_time = time.perf_counter()
+
         action_type = plan_frontmatter.get('type', '').lower()
 
         if not action_type:
@@ -172,6 +181,7 @@ class TrustEvaluator:
 
         if not matching_rules:
             logger.debug(f"No enabled trust rules for action_type: {action_type}")
+            self._log_performance(start_time, action_type, matched=False)
             return (False, None)
 
         # Evaluate each rule
@@ -181,6 +191,9 @@ class TrustEvaluator:
                 rule.record_usage()
                 self._save_rules_to_handbook()
 
+                # Performance monitoring
+                self._log_performance(start_time, action_type, matched=True, rule_id=rule.rule_id)
+
                 logger.info(
                     f"Trust rule matched: {rule.rule_id} for {action_type}"
                 )
@@ -188,7 +201,41 @@ class TrustEvaluator:
 
         # No matching rules
         logger.debug(f"No trust rules matched for {action_type}")
+        self._log_performance(start_time, action_type, matched=False)
         return (False, None)
+
+    def _log_performance(
+        self,
+        start_time: float,
+        action_type: str,
+        matched: bool,
+        rule_id: Optional[str] = None
+    ):
+        """
+        Log performance metrics for trust evaluation.
+
+        Logs warning if evaluation exceeds target time (10ms).
+
+        Args:
+            start_time: Start time from time.perf_counter()
+            action_type: Action type evaluated
+            matched: Whether a rule matched
+            rule_id: Matched rule ID (if any)
+        """
+        elapsed_ms = (time.perf_counter() - start_time) * 1000
+
+        # Log warning if exceeds target
+        if elapsed_ms > TRUST_EVAL_TARGET_MS:
+            logger.warning(
+                f"Trust evaluation slow: {elapsed_ms:.2f}ms (target: {TRUST_EVAL_TARGET_MS}ms) "
+                f"for {action_type}, rules_checked={len(self._get_matching_rules(action_type))}"
+            )
+
+        # Debug log for all evaluations
+        logger.debug(
+            f"Trust eval: {elapsed_ms:.2f}ms, type={action_type}, "
+            f"matched={matched}, rule_id={rule_id}"
+        )
 
     def _get_matching_rules(self, action_type: str) -> List[TrustRule]:
         """

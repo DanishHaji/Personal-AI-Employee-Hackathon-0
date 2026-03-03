@@ -51,15 +51,27 @@ class Recommendation:
     rationale: str
     action_items: List[str] = field(default_factory=list)
 
+    # Feedback UI elements (T128 - Phase 11)
+    user_feedback: Optional[str] = None  # "helpful", "not_helpful", "implemented", "dismissed"
+    feedback_comment: Optional[str] = None
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
-        return {
+        result = {
             "priority": self.priority,
             "category": self.category,
             "recommendation": self.recommendation,
             "rationale": self.rationale,
             "action_items": self.action_items
         }
+
+        # Include feedback if present
+        if self.user_feedback:
+            result["user_feedback"] = self.user_feedback
+        if self.feedback_comment:
+            result["feedback_comment"] = self.feedback_comment
+
+        return result
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "Recommendation":
@@ -69,7 +81,9 @@ class Recommendation:
             category=data["category"],
             recommendation=data["recommendation"],
             rationale=data["rationale"],
-            action_items=data.get("action_items", [])
+            action_items=data.get("action_items", []),
+            user_feedback=data.get("user_feedback"),
+            feedback_comment=data.get("feedback_comment")
         )
 
 

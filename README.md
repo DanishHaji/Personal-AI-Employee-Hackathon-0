@@ -1,10 +1,10 @@
-# Personal AI Employee - Silver Tier
+# Personal AI Employee - Gold Tier
 
-**Local-first autonomous agent with HITL execution capabilities**
+**Fully autonomous AI employee with 8 intelligent user stories**
 
 ## Overview
 
-A fully autonomous AI Employee system that monitors, plans, and executes tasks with Human-in-the-Loop approval.
+A complete autonomous AI Employee system that monitors, plans, executes, and learns from your work patterns to provide proactive assistance across email, social media, calendar, meetings, expenses, and more.
 
 ### Bronze Tier (Monitoring & Planning)
 - ✅ Automated Gmail monitoring (detects important emails within 2 minutes)
@@ -12,11 +12,21 @@ A fully autonomous AI Employee system that monitors, plans, and executes tasks w
 - ✅ AI-generated task plans using Claude Code
 - ✅ Real-time Dashboard in Obsidian showing pending actions
 
-### Silver Tier (Execution & Automation) **NEW**
+### Silver Tier (Execution & Automation)
 - ✅ **Email Sending**: Send and reply to emails via Gmail API with approval
 - ✅ **Social Media Posting**: Auto-post to LinkedIn, Facebook, Twitter
 - ✅ **WhatsApp Monitoring**: Monitor WhatsApp Business for incoming messages
 - ✅ **Scheduled Tasks**: Daily briefings, weekly summaries, custom automation
+
+### Gold Tier (Intelligent Autonomy) **NEW**
+- ✅ **US1: Scheduler Skill** - Email-based task scheduling with natural language parsing
+- ✅ **US2: Social Media Manager** - Autonomous multi-platform posting with approval workflow
+- ✅ **US3: WhatsApp Processor** - Intelligent message triage and response routing
+- ✅ **US4: Executor Skill** - Autonomous task execution with trust-based approval
+- ✅ **US5: Calendar Integration** - Google Calendar sync with meeting preparation
+- ✅ **US6: Meeting Attendant** - Zoom integration with AI transcription and notes
+- ✅ **US7: Proactive Suggestions** - Weekly analytics with actionable recommendations
+- ✅ **US8: Financial Tracking** - OCR-based expense tracking with budget management
 
 ## Quick Start
 
@@ -24,23 +34,35 @@ A fully autonomous AI Employee system that monitors, plans, and executes tasks w
 
 For detailed Bronze Tier setup instructions, see: **[specs/001-bronze-tier-mvp/quickstart.md](specs/001-bronze-tier-mvp/quickstart.md)**
 
-### Silver Tier (Execution) **NEW**
+### Silver Tier (Execution)
 
 For detailed Silver Tier setup instructions, see: **[SILVER_TIER_SETUP.md](SILVER_TIER_SETUP.md)**
 
+### Gold Tier (Intelligent Autonomy) **NEW**
+
+For detailed Gold Tier setup instructions, see: **[docs/gold-tier-setup.md](docs/gold-tier-setup.md)**
+
 **Quick Setup**:
 ```bash
-# 1. Install additional dependencies
-uv pip install apscheduler
+# 1. Install Gold Tier dependencies
+uv pip install easyocr pillow openai google-cloud-vision google-auth
 
-# 2. Configure MCP servers in .env (see SILVER_TIER_SETUP.md)
+# 2. Configure API keys in .env (see docs/gold-tier-setup.md)
 
-# 3. Start Silver Tier processes
+# 3. Set up Google Calendar and Zoom credentials
+
+# 4. Configure default budgets in Budgets/default_budgets.json
+
+# 5. Start all processes (10 total: 3 Bronze + 3 Silver + 4 Gold)
 pm2 start ecosystem.config.js
 
-# 4. Verify all processes running
+# 6. Verify all processes running
 pm2 status
 ```
+
+**Troubleshooting**: See **[docs/gold-tier-troubleshooting.md](docs/gold-tier-troubleshooting.md)** for 50+ common scenarios
+
+**Data Export**: See **[docs/encryption-backup.md](docs/encryption-backup.md)** for GDPR-compliant data portability
 
 ### Prerequisites
 
@@ -142,13 +164,30 @@ pm2 save
 
 ## Architecture
 
-### Components
+### Components (10 Processes)
 
+**Bronze Tier (3 processes)**:
 - **Gmail Watcher**: Monitors inbox every 2 minutes, surfaces important emails
 - **File System Watcher**: Monitors /Inbox folder for dropped files
 - **Orchestrator**: Detects new items, triggers Claude Code processing
-- **Claude Code Skills**: AI-powered email triage, file processing, plan generation
-- **Obsidian Vault**: Local-first storage and dashboard
+
+**Silver Tier (3 processes)**:
+- **Scheduler**: Manages scheduled tasks (daily briefings, weekly summaries)
+- **Social Media Poster**: Handles LinkedIn, Facebook, Twitter posts
+- **WhatsApp Watcher**: Monitors WhatsApp Business for incoming messages
+
+**Gold Tier (4 processes)**:
+- **Calendar Watcher**: Google Calendar sync with meeting preparation
+- **Meeting Recorder**: Zoom integration with AI transcription
+- **Analytics Engine**: Weekly insights with proactive recommendations
+- **Expense Processor**: OCR-based receipt processing and budget tracking
+
+**Core Services**:
+- **Claude Code Skills**: 15+ AI-powered skills for autonomous task execution
+- **Obsidian Vault**: Local-first storage and real-time dashboard
+- **Trust Evaluator**: <10ms trust rule evaluation for approval decisions
+- **Rate Limiter**: Token bucket algorithm protecting 8+ API quotas
+- **GDPR Exporter**: Complete data portability for Article 20 compliance
 
 ### Folder Structure
 
@@ -160,10 +199,17 @@ pm2 save
 ├── Pending_Approval/   # Items requiring human approval
 ├── Approved/           # Approved actions (Silver tier+)
 ├── Done/               # Completed items
-├── Logs/               # JSON audit logs
+├── Logs/               # JSON audit logs and performance metrics
 ├── Quarantine/         # Unsafe files
+├── Contacts/           # CRM contact entities (CONTACT_*.md)
+├── Expenses/           # Expense tracking entities (EXPENSE_*.md)
+├── Budgets/            # Monthly budget files (YYYY-MM.json)
+├── Receipts/           # OCR-processed receipt images
+├── Meetings/           # Meeting notes and transcriptions
+├── Calendar/           # Synced calendar events (events.json)
+├── Insights/           # Weekly analytics insights (INSIGHT_*.json)
 ├── Dashboard.md        # Real-time status summary
-└── Company_Handbook.md # AI behavior rules
+└── Company_Handbook.md # AI behavior rules and trust policies
 ```
 
 ## Usage
@@ -222,19 +268,35 @@ uv run pytest --cov=src --cov-report=html
 
 ## Documentation
 
+### Bronze Tier
 - **[Quickstart Guide](specs/001-bronze-tier-mvp/quickstart.md)** - 10-minute setup
 - **[Feature Specification](specs/001-bronze-tier-mvp/spec.md)** - Requirements and user stories
 - **[Implementation Plan](specs/001-bronze-tier-mvp/plan.md)** - Architecture and decisions
 - **[Data Model](specs/001-bronze-tier-mvp/data-model.md)** - Entity definitions
 - **[File Interfaces](specs/001-bronze-tier-mvp/contracts/file-interfaces.md)** - Communication contracts
 
+### Silver Tier
+- **[Setup Guide](SILVER_TIER_SETUP.md)** - Silver Tier installation and configuration
+- **[Feature Specification](specs/002-silver-tier-upgrade/spec.md)** - Silver Tier requirements
+
+### Gold Tier **NEW**
+- **[Setup Guide](docs/gold-tier-setup.md)** - Complete setup for all 8 user stories
+- **[Troubleshooting Guide](docs/gold-tier-troubleshooting.md)** - 50+ common scenarios and fixes
+- **[Encryption & Backup](docs/encryption-backup.md)** - Key management and GDPR data export
+- **[Feature Specification](specs/003-gold-tier-upgrade/spec.md)** - Gold Tier requirements and architecture
+- **[Task List](specs/003-gold-tier-upgrade/tasks.md)** - Implementation tasks and progress
+
 ## Security & Privacy
 
 - ✅ **Local-first**: All data stored locally in Obsidian vault
+- ✅ **AES-256-GCM Encryption**: Sensitive contact data encrypted at rest
 - ✅ **No cloud sync of credentials**: Gmail tokens stored outside vault
 - ✅ **Audit logging**: All actions logged to `/Logs/` with 90-day retention
 - ✅ **File quarantine**: Executable files automatically isolated
-- ✅ **Read-only Gmail**: Bronze tier cannot send emails
+- ✅ **Rate limiting**: Token bucket algorithm protects 8+ API quotas
+- ✅ **Trust evaluation**: <10ms policy enforcement for autonomous actions
+- ✅ **GDPR compliance**: Article 20 data portability with one-command export
+- ✅ **Encryption key backup**: Secure key rotation and recovery procedures
 
 ## Troubleshooting
 
@@ -273,16 +335,23 @@ pm2 restart orchestrator
 claude "Use dashboard-updater skill to refresh Dashboard.md"
 ```
 
-## Next Steps (Silver Tier)
+## Next Steps
 
-After Bronze Tier is stable, upgrade to Silver Tier for:
-- ✅ Email sending/replying via MCP server
-- ✅ WhatsApp monitoring
-- ✅ LinkedIn auto-posting
-- ✅ HITL approval workflow execution
-- ✅ Scheduled tasks (daily briefings)
+Gold Tier is now complete with 8 fully autonomous user stories!
 
-See: `specs/002-silver-tier/spec.md` (create with `/sp.specify` when ready)
+**Recommended Next Steps**:
+1. **Production Hardening**: Add error recovery, retry logic, and comprehensive logging
+2. **Multi-user Support**: Extend to support team workflows and shared calendars
+3. **Mobile App**: Build companion mobile app for on-the-go approvals
+4. **Advanced Analytics**: Machine learning models for predictive task suggestions
+5. **Integration Expansion**: Add Slack, Microsoft Teams, Notion, Asana integrations
+
+**Current Implementation Status**:
+- ✅ Bronze Tier: Monitoring & Planning (3 processes)
+- ✅ Silver Tier: Execution & Automation (3 processes)
+- ✅ Gold Tier: Intelligent Autonomy (4 processes, 8 user stories)
+
+See `specs/003-gold-tier-upgrade/tasks.md` for detailed implementation checklist.
 
 ## License
 

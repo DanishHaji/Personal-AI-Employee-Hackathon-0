@@ -242,22 +242,22 @@ description: "Task breakdown for Gold Tier - Autonomous AI Employee"
 
 ### Implementation for User Story 8
 
-- [ ] T102 [P] [US8] Create Expense model in src/models/expense.py with OCR confidence tracking
-- [ ] T103 [P] [US8] Create Budget model in src/models/budget.py with monthly allocations
-- [ ] T104 [P] [US8] Create src/services/expense_service.py with EasyOCR integration
-- [ ] T105 [P] [US8] Create src/services/budget_service.py with budget tracking and alert logic
-- [ ] T106 [US8] Implement receipt detection in Gmail watcher for expense processing
-- [ ] T107 [US8] Implement OCR text extraction from receipts (PDF and images) in expense_service.py
-- [ ] T108 [US8] Implement expense parsing with Claude Code in expense_service.py (amount, vendor, date, category)
-- [ ] T109 [US8] Add category keyword matching in expense_service.py
-- [ ] T110 [US8] Implement budget validation in budget_service.py (check against monthly limits)
-- [ ] T111 [US8] Add budget threshold alerts (80% spending) to /Needs_Action/
-- [ ] T112 [US8] Implement unusual expense detection (3x category average) in expense_service.py
-- [ ] T113 [US8] Create expense entity files in /Expenses/YYYY-MM/ with encryption
-- [ ] T114 [US8] Update budget JSON files in /Budgets/YYYY-MM.json
-- [ ] T115 [US8] Create .claude/commands/expense-tracker.md agent skill
-- [ ] T116 [US8] Add Google Vision API fallback for low OCR confidence (<0.75)
-- [ ] T117 [US8] Create pytest tests in tests/unit/test_expense_service.py for OCR parsing and budget validation
+- [X] T102 [P] [US8] Create Expense model in src/models/expense.py with OCR confidence tracking
+- [X] T103 [P] [US8] Create Budget model in src/models/budget.py with monthly allocations
+- [X] T104 [P] [US8] Create src/services/expense_service.py with EasyOCR integration
+- [X] T105 [P] [US8] Create src/services/budget_service.py with budget tracking and alert logic
+- [X] T106 [US8] Implement receipt detection in Gmail watcher for expense processing
+- [X] T107 [US8] Implement OCR text extraction from receipts (PDF and images) in expense_service.py
+- [X] T108 [US8] Implement expense parsing with Claude Code in expense_service.py (amount, vendor, date, category)
+- [X] T109 [US8] Add category keyword matching in expense_service.py
+- [X] T110 [US8] Implement budget validation in budget_service.py (check against monthly limits)
+- [X] T111 [US8] Add budget threshold alerts (80% spending) to /Needs_Action/
+- [X] T112 [US8] Implement unusual expense detection (3x category average) in expense_service.py
+- [X] T113 [US8] Create expense entity files in /Expenses/YYYY-MM/ with encryption
+- [X] T114 [US8] Update budget JSON files in /Budgets/YYYY-MM.json
+- [X] T115 [US8] Create .claude/commands/expense-tracker.md agent skill
+- [X] T116 [US8] Add Google Vision API fallback for low OCR confidence (<0.75)
+- [X] T117 [US8] Create pytest tests in tests/unit/test_expense_service.py for OCR parsing and budget validation
 - [ ] T118 [US8] Run quickstart.md US8 integration test (Test Scenario 8.1)
 
 **Checkpoint**: Financial tracking complete - expenses auto-tracked, budgets monitored, alerts generated
@@ -268,16 +268,16 @@ description: "Task breakdown for Gold Tier - Autonomous AI Employee"
 
 **Purpose**: Improvements that affect multiple user stories and final validation
 
-- [ ] T119 [P] Create comprehensive README updates in docs/ for Gold Tier setup and usage
-- [ ] T120 [P] Add Gold Tier troubleshooting guide to docs/ (trust rules, calendar quota, OCR accuracy)
-- [ ] T121 [P] Create .env.example with all Gold Tier API keys (GOOGLE_CALENDAR_CREDENTIALS_PATH, OPENAI_API_KEY, ZOOM_API_KEY)
-- [ ] T122 Update PM2 ecosystem.config.js with new Gold Tier processes (analytics_engine, suggestion_engine, calendar_watcher)
-- [ ] T123 [P] Add performance monitoring for trust evaluation (<10ms target)
-- [ ] T124 [P] Add rate limiting for Google Calendar API (1M queries/day) and Whisper API (50 req/min)
-- [ ] T125 Create encryption key backup instructions in docs/
-- [ ] T126 [P] Add data export functionality for GDPR compliance (FR-044)
+- [X] T119 [P] Create comprehensive README updates in docs/ for Gold Tier setup and usage
+- [X] T120 [P] Add Gold Tier troubleshooting guide to docs/ (trust rules, calendar quota, OCR accuracy)
+- [X] T121 [P] Create .env.example with all Gold Tier API keys (GOOGLE_CALENDAR_CREDENTIALS_PATH, OPENAI_API_KEY, ZOOM_API_KEY)
+- [X] T122 Update PM2 ecosystem.config.js with new Gold Tier processes (analytics_engine, suggestion_engine, calendar_watcher)
+- [X] T123 [P] Add performance monitoring for trust evaluation (<10ms target)
+- [X] T124 [P] Add rate limiting for Google Calendar API (1M queries/day) and Whisper API (50 req/min)
+- [X] T125 Create encryption key backup instructions in docs/
+- [X] T126 [P] Add data export functionality for GDPR compliance (FR-044)
 - [ ] T127 Run full end-to-end integration test from quickstart.md (auto-reply → meeting schedule → notes → follow-up)
-- [ ] T128 [P] Add feedback UI elements to entity frontmatter (thumbs up/down for suggestions, insights, actions)
+- [X] T128 [P] Add feedback UI elements to entity frontmatter (thumbs up/down for suggestions, insights, actions)
 - [ ] T129 Code review and refactoring for consistency across all 8 user stories
 - [ ] T130 Final validation of all 12 quickstart.md test scenarios
 

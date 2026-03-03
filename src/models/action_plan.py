@@ -47,6 +47,11 @@ class ActionPlan:
     approval_file: Optional[str] = None
     status: Literal["draft", "awaiting_approval", "complete"] = "draft"
 
+    # Feedback UI elements (T128 - Phase 11)
+    user_feedback: Optional[str] = None  # "approved", "rejected", "modified", "auto_approved"
+    feedback_comment: Optional[str] = None
+    execution_rating: Optional[int] = None  # 1-5 stars
+
     # Type identifier (constant)
     type: str = field(default="action_plan", init=False)
 
@@ -57,7 +62,7 @@ class ActionPlan:
         Returns:
             dict: Frontmatter data ready for YAML serialization
         """
-        return {
+        result = {
             "plan_id": self.plan_id,
             "title": self.title,
             "source_type": self.source_type,
@@ -68,6 +73,16 @@ class ActionPlan:
             "approval_file": self.approval_file,
             "status": self.status,
         }
+
+        # Include feedback if present (T128)
+        if self.user_feedback:
+            result["user_feedback"] = self.user_feedback
+        if self.feedback_comment:
+            result["feedback_comment"] = self.feedback_comment
+        if self.execution_rating:
+            result["execution_rating"] = self.execution_rating
+
+        return result
 
     @classmethod
     def from_frontmatter(cls, frontmatter: dict, steps: List[Step]) -> "ActionPlan":
@@ -92,6 +107,9 @@ class ActionPlan:
             approval_required=frontmatter.get("approval_required", False),
             approval_file=frontmatter.get("approval_file"),
             status=frontmatter.get("status", "draft"),
+            user_feedback=frontmatter.get("user_feedback"),
+            feedback_comment=frontmatter.get("feedback_comment"),
+            execution_rating=frontmatter.get("execution_rating"),
         )
 
     def to_markdown(self) -> str:
