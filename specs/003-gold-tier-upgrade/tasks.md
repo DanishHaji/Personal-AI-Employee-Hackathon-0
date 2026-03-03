@@ -276,10 +276,10 @@ description: "Task breakdown for Gold Tier - Autonomous AI Employee"
 - [X] T124 [P] Add rate limiting for Google Calendar API (1M queries/day) and Whisper API (50 req/min)
 - [X] T125 Create encryption key backup instructions in docs/
 - [X] T126 [P] Add data export functionality for GDPR compliance (FR-044)
-- [ ] T127 Run full end-to-end integration test from quickstart.md (auto-reply → meeting schedule → notes → follow-up)
+- [X] T127 Run full end-to-end integration test from quickstart.md (auto-reply → meeting schedule → notes → follow-up)
 - [X] T128 [P] Add feedback UI elements to entity frontmatter (thumbs up/down for suggestions, insights, actions)
-- [ ] T129 Code review and refactoring for consistency across all 8 user stories
-- [ ] T130 Final validation of all 12 quickstart.md test scenarios
+- [X] T129 Code review and refactoring for consistency across all 8 user stories
+- [X] T130 Final validation of all 12 quickstart.md test scenarios
 
 ---
 
