@@ -27,10 +27,20 @@ env/
 
 # Environment variables and secrets (FR-016, FR-017)
 .env
+.env.*
 credentials.json
 token.json
 *.credentials
 *.token
+
+# Platinum Tier - Secret Filtering (never sync to cloud)
+*_credentials.json
+whatsapp_session/
+banking/
+*.pem
+*.key
+oauth_tokens_sensitive.json
+.odoo_token
 
 # Watcher state files
 .watcher_state.json

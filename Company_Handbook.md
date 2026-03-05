@@ -111,12 +111,90 @@ security:
 
 # System Configuration
 system:
-  version: "0.3.0"  # Gold Tier
-  tier: gold
+  version: "0.4.0"  # Platinum Tier
+  tier: platinum
+  instance: local  # "cloud" or "local" - identifies which work zone this instance operates in
   timezone: "America/Los_Angeles"
   date_format: "YYYY-MM-DD"
   time_format: "24h"
   log_level: INFO
+
+# Platinum Tier - Work Zone Specialization
+# Defines capabilities and restrictions for Cloud and Local work zones
+work_zones:
+  cloud:
+    enabled: true
+    capabilities:
+      - email_triage          # Detect and categorize incoming emails
+      - draft_responses       # Draft email replies (not send)
+      - schedule_monitoring   # Monitor calendar for conflicts
+      - document_analysis     # Analyze documents and generate summaries
+      - social_media_drafts   # Draft social media posts
+    restrictions:
+      - no_whatsapp_access    # Cannot access WhatsApp sessions
+      - no_banking_credentials  # Cannot access banking credentials
+      - no_final_execution    # Cannot execute final actions (send emails, make payments)
+
+  local:
+    enabled: true
+    capabilities:
+      - approve_cloud_drafts  # Review and approve Cloud-drafted content
+      - whatsapp_send         # Send WhatsApp messages
+      - banking_transactions  # Execute banking transactions
+      - email_send            # Send emails (after approval)
+      - final_execution       # Execute all final actions
+    exclusive_secrets:
+      - whatsapp_session      # WhatsApp Web session data
+      - banking_credentials   # Banking API credentials
+      - oauth_tokens_sensitive  # Sensitive OAuth tokens
+
+# Platinum Tier - Routing Rules
+# Determines which work zone handles each action type
+routing_rules:
+  - pattern: "EMAIL_*"
+    action: "reply_draft"
+    zone: "cloud"             # Cloud drafts email replies
+    requires_approval: true   # Local must approve before sending
+
+  - pattern: "EMAIL_*"
+    action: "send"
+    zone: "local"             # Only Local can send emails
+    requires_approval: false  # Already approved by moving to /Approved/
+
+  - pattern: "WHATSAPP_*"
+    action: "send_message"
+    zone: "local"             # WhatsApp only on Local (secrets)
+    requires_approval: false
+
+  - pattern: "SOCIAL_*"
+    action: "draft_post"
+    zone: "cloud"             # Cloud drafts social media posts
+    requires_approval: true
+
+  - pattern: "SOCIAL_*"
+    action: "publish"
+    zone: "local"             # Local publishes after approval
+    requires_approval: false
+
+  - pattern: "DOCUMENT_*"
+    action: "generate"
+    zone: "cloud"             # Cloud can generate documents
+    requires_approval: true
+
+  - pattern: "CALENDAR_*"
+    action: "schedule"
+    zone: "cloud"             # Cloud can schedule meetings
+    requires_approval: true
+
+  - pattern: "PAYMENT_*"
+    action: "execute"
+    zone: "local"             # All payments Local-only (secrets)
+    requires_approval: true
+
+  - pattern: "EXPENSE_*"
+    action: "record"
+    zone: "cloud"             # Cloud can record expenses
+    requires_approval: false  # Auto-approved for recording only
 ---
 
 # Company Handbook
