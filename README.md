@@ -1,135 +1,130 @@
-# Personal AI Employee - Gold Tier
+# Personal AI Employee - Platinum Tier
 
-**Fully autonomous AI employee with 8 intelligent user stories**
+**Professional-grade autonomous AI employee with 24/7 cloud operation and intelligent work-zone specialization**
+
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![Python](https://img.shields.io/badge/python-3.13%2B-blue)
+![Status](https://img.shields.io/badge/status-in%20development-yellow)
 
 ## Overview
 
-A complete autonomous AI Employee system that monitors, plans, executes, and learns from your work patterns to provide proactive assistance across email, social media, calendar, meetings, expenses, and more.
+A complete autonomous AI Employee system that monitors, plans, executes, and learns from your work patterns to provide proactive assistance. Features local-first privacy with optional cloud deployment for 24/7 availability, intelligent work-zone specialization, and comprehensive health monitoring.
 
-### Bronze Tier (Monitoring & Planning)
-- ✅ Automated Gmail monitoring (detects important emails within 2 minutes)
-- ✅ File drop processing via Obsidian vault /Inbox folder
-- ✅ AI-generated task plans using Claude Code
-- ✅ Real-time Dashboard in Obsidian showing pending actions
+### Progressive Tier Architecture
 
-### Silver Tier (Execution & Automation)
-- ✅ **Email Sending**: Send and reply to emails via Gmail API with approval
-- ✅ **Social Media Posting**: Auto-post to LinkedIn, Facebook, Twitter
-- ✅ **WhatsApp Monitoring**: Monitor WhatsApp Business for incoming messages
-- ✅ **Scheduled Tasks**: Daily briefings, weekly summaries, custom automation
+#### Bronze Tier - Monitoring & Planning ✅
+Foundation for autonomous operation with real-time monitoring and AI-powered planning.
 
-### Gold Tier (Intelligent Autonomy) **NEW**
+- ✅ **Gmail Monitoring**: Automated inbox scanning every 2 minutes with priority detection
+- ✅ **File Drop Processing**: Real-time file monitoring via Obsidian vault `/Inbox` folder
+- ✅ **AI Task Planning**: Intelligent plan generation using Claude Code
+- ✅ **Real-time Dashboard**: Live status updates in Obsidian showing pending actions
+- ✅ **Audit Logging**: Complete event tracking with structured JSONL logs
+
+#### Silver Tier - Execution & Automation ✅
+Autonomous execution with human-in-the-loop approval for sensitive actions.
+
+- ✅ **Email Automation**: Send and reply to emails via Gmail API with approval workflow
+- ✅ **Social Media Publishing**: Multi-platform posting (LinkedIn, Facebook, Twitter)
+- ✅ **WhatsApp Integration**: Business message monitoring and auto-response
+- ✅ **Task Scheduling**: Daily briefings, weekly summaries, custom automation
+- ✅ **Approval Workflows**: Trust-based decision engine for autonomous actions
+
+#### Gold Tier - Intelligent Autonomy ✅
+Advanced intelligence with 8 fully autonomous user stories.
+
 - ✅ **US1: Scheduler Skill** - Email-based task scheduling with natural language parsing
-- ✅ **US2: Social Media Manager** - Autonomous multi-platform posting with approval workflow
+- ✅ **US2: Social Media Manager** - Autonomous multi-platform content distribution
 - ✅ **US3: WhatsApp Processor** - Intelligent message triage and response routing
-- ✅ **US4: Executor Skill** - Autonomous task execution with trust-based approval
+- ✅ **US4: Executor Skill** - Trust-based autonomous task execution
 - ✅ **US5: Calendar Integration** - Google Calendar sync with meeting preparation
-- ✅ **US6: Meeting Attendant** - Zoom integration with AI transcription and notes
+- ✅ **US6: Meeting Attendant** - Zoom integration with AI transcription and automated notes
 - ✅ **US7: Proactive Suggestions** - Weekly analytics with actionable recommendations
 - ✅ **US8: Financial Tracking** - OCR-based expense tracking with budget management
 
+#### Platinum Tier - Cloud & Enterprise ⚡ **IN PROGRESS** (60% Complete)
+24/7 cloud operation with work-zone specialization and enterprise-grade reliability.
+
+**Completed Features**:
+- ✅ **Vault Synchronization**: Git-based bidirectional sync between cloud and local instances
+- ✅ **Secret Filtering**: Automatic detection and prevention of secrets syncing to cloud
+- ✅ **Work-Zone Specialization**: Cloud handles triage/drafts, Local handles approvals/secrets
+- ✅ **Claim Management**: Advisory file-based locks with 15-minute TTL for task coordination
+- ✅ **Health Monitoring**: System resource tracking, watcher supervision, auto-restart
+- ✅ **Cloud Deployment**: One-command Ubuntu VM setup with systemd integration
+- ✅ **24/7 Watcher Operation**: Continuous Gmail and filesystem monitoring
+- ✅ **Priority Detection**: Urgent email identification with intelligent routing
+- ✅ **Weekly Health Reports**: Comprehensive system analytics and uptime tracking
+- ✅ **Alert Management**: Rate-limited notifications with email/webhook support
+
+**In Progress** (40% remaining):
+- ⏳ Odoo Integration: Cloud-hosted accounting with expense sync
+- ⏳ Offline Resilience: Queue-based operation during network outages
+- ⏳ System Polish: Production hardening and documentation
+
+**Progress**: 88 of 147 tasks complete (59.9%)
+
 ## Quick Start
-
-### Bronze Tier (Monitoring)
-
-For detailed Bronze Tier setup instructions, see: **[specs/001-bronze-tier-mvp/quickstart.md](specs/001-bronze-tier-mvp/quickstart.md)**
-
-### Silver Tier (Execution)
-
-For detailed Silver Tier setup instructions, see: **[SILVER_TIER_SETUP.md](SILVER_TIER_SETUP.md)**
-
-### Gold Tier (Intelligent Autonomy) **NEW**
-
-For detailed Gold Tier setup instructions, see: **[docs/gold-tier-setup.md](docs/gold-tier-setup.md)**
-
-**Quick Setup**:
-```bash
-# 1. Install Gold Tier dependencies
-uv pip install easyocr pillow openai google-cloud-vision google-auth
-
-# 2. Configure API keys in .env (see docs/gold-tier-setup.md)
-
-# 3. Set up Google Calendar and Zoom credentials
-
-# 4. Configure default budgets in Budgets/default_budgets.json
-
-# 5. Start all processes (10 total: 3 Bronze + 3 Silver + 4 Gold)
-pm2 start ecosystem.config.js
-
-# 6. Verify all processes running
-pm2 status
-```
-
-**Troubleshooting**: See **[docs/gold-tier-troubleshooting.md](docs/gold-tier-troubleshooting.md)** for 50+ common scenarios
-
-**Data Export**: See **[docs/encryption-backup.md](docs/encryption-backup.md)** for GDPR-compliant data portability
 
 ### Prerequisites
 
-- Python 3.13+
-- UV package manager (recommended) or pip
-- Node.js v24+ (for PM2 process management)
-- Obsidian v1.10.6+
-- Claude Code CLI
-- Gmail account with API access
+- **Python**: 3.13+ (required for Platinum Tier dependencies)
+- **UV Package Manager**: Recommended for dependency management
+- **Node.js**: v24+ for PM2 process management (Local instance)
+- **Obsidian**: v1.10.6+ for vault visualization
+- **Claude Code CLI**: For AI-powered task execution
+- **Gmail Account**: With API access enabled
+- **Git**: For vault synchronization (Platinum Tier)
+- **Ubuntu 22.04 VM**: For cloud deployment (Platinum Tier, optional)
 
 ### Installation
 
 ```bash
 # Clone repository
-git clone <repository-url>
-cd ai-employee
+git clone https://github.com/DanishHaji/Personal-AI-Employee-Hackathon-0.git
+cd Personal-AI-Employee-Hackathon-0
 
-# Install UV package manager (if not already installed)
+# Install UV package manager
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# Install dependencies with UV
+# Install dependencies
 uv sync
-
-# Or with pip (if UV not available)
-pip install -e .
 
 # Copy environment template
 cp .env.example .env
-# Edit .env and set your VAULT_PATH and Gmail credentials
+# Edit .env and configure VAULT_PATH, API keys, credentials
 ```
 
 ### Gmail API Setup
 
-1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Create a new project
-3. Enable Gmail API
-4. Create OAuth 2.0 credentials (Desktop app)
-5. Download `credentials.json` to project root
-6. Run first-time authentication:
+1. Visit [Google Cloud Console](https://console.cloud.google.com/)
+2. Create new project → Enable Gmail API
+3. Create OAuth 2.0 credentials (Desktop app)
+4. Download `credentials.json` to project root
+5. Authenticate:
 
 ```bash
 uv run python src/watchers/gmail_watcher.py --auth-only
 ```
 
-### Create Obsidian Vault
+### Initialize Obsidian Vault
 
 ```bash
-# Initialize vault structure
+# Create vault structure
 uv run python scripts/init_vault.py --path /path/to/your/vault
 
-# Open vault in Obsidian
-# File → Open folder as vault → Select /path/to/your/vault
+# Open in Obsidian: File → Open folder as vault
 ```
 
-### Start Watchers with PM2
+### Start Local Instance
 
+**Bronze/Silver/Gold Tier (PM2)**:
 ```bash
-# Install PM2 globally (if not already installed)
+# Install PM2
 npm install -g pm2
 
-# Start all watchers using ecosystem config (recommended)
+# Start all processes (10 total)
 pm2 start ecosystem.config.js
-
-# OR start individually (alternative method)
-pm2 start src/watchers/gmail_watcher.py --name gmail-watcher --interpreter python3
-pm2 start src/watchers/filesystem_watcher.py --name fs-watcher --interpreter python3
-pm2 start src/orchestrator.py --name orchestrator --interpreter python3
 
 # Check status
 pm2 status
@@ -137,226 +132,437 @@ pm2 status
 # View logs
 pm2 logs
 
-# View logs for specific process
-pm2 logs gmail-watcher
-pm2 logs filesystem-watcher
-pm2 logs orchestrator
-
-# Stop all processes
-pm2 stop all
-
-# Restart all processes
-pm2 restart all
-
-# Enable auto-start on system boot (optional)
+# Enable auto-start on boot
 pm2 startup
 pm2 save
 ```
 
-**PM2 Process Management**:
-- `pm2 status` - View all running processes
-- `pm2 logs` - Tail all logs in real-time
-- `pm2 logs <name>` - View logs for specific process
-- `pm2 monit` - Real-time CPU/memory monitoring
-- `pm2 restart all` - Restart all processes
-- `pm2 stop all` - Stop all processes
-- `pm2 delete all` - Remove all processes from PM2
+**Platinum Tier - Local Instance** (Additional):
+```bash
+# Install systemd services (requires sudo)
+sudo cp deployment/systemd/*.{service,timer} /etc/systemd/system/
+sudo systemctl daemon-reload
+
+# Enable vault sync and claim management
+sudo systemctl enable --now vault-sync.timer
+sudo systemctl enable --now claim-expiry.timer
+
+# Check status
+systemctl status vault-sync.timer claim-expiry.timer
+```
+
+### Deploy Cloud Instance (Platinum Tier)
+
+**One-Command Deployment**:
+```bash
+# On fresh Ubuntu 22.04 VM
+sudo ./deployment/cloud-deploy.sh
+```
+
+**Manual Configuration**:
+```bash
+# 1. Edit cloud environment
+sudo nano /opt/ai-employee/.env.cloud
+
+# 2. Add Gmail credentials
+sudo cp gmail_credentials.json /opt/ai-employee/.credentials/
+
+# 3. Configure Git SSH for vault sync
+# (follow prompts from deployment script)
+
+# 4. Start services
+sudo systemctl start health-monitor.service
+sudo systemctl start gmail-watcher.service
+sudo systemctl start filesystem-watcher.service
+
+# 5. Check health
+sudo journalctl -u health-monitor.service -f
+cat /opt/ai-employee/Logs/health.jsonl
+```
+
+For detailed deployment instructions, see: **[PLATINUM_TIER_DEPLOYMENT.md](PLATINUM_TIER_DEPLOYMENT.md)**
 
 ## Architecture
 
-### Components (10 Processes)
+### System Components
 
 **Bronze Tier (3 processes)**:
-- **Gmail Watcher**: Monitors inbox every 2 minutes, surfaces important emails
-- **File System Watcher**: Monitors /Inbox folder for dropped files
-- **Orchestrator**: Detects new items, triggers Claude Code processing
+- **Gmail Watcher**: Priority email detection every 120s
+- **Filesystem Watcher**: Real-time file monitoring with quarantine
+- **Orchestrator**: Event coordination and Claude Code triggering
 
 **Silver Tier (3 processes)**:
-- **Scheduler**: Manages scheduled tasks (daily briefings, weekly summaries)
-- **Social Media Poster**: Handles LinkedIn, Facebook, Twitter posts
-- **WhatsApp Watcher**: Monitors WhatsApp Business for incoming messages
+- **Scheduler**: Automated task scheduling and execution
+- **Social Media Poster**: Multi-platform content distribution
+- **WhatsApp Watcher**: Business messaging automation
 
 **Gold Tier (4 processes)**:
-- **Calendar Watcher**: Google Calendar sync with meeting preparation
-- **Meeting Recorder**: Zoom integration with AI transcription
-- **Analytics Engine**: Weekly insights with proactive recommendations
-- **Expense Processor**: OCR-based receipt processing and budget tracking
+- **Calendar Watcher**: Google Calendar synchronization
+- **Meeting Recorder**: Zoom transcription and note generation
+- **Analytics Engine**: Weekly insights and recommendations
+- **Expense Processor**: OCR receipt processing and budgeting
 
-**Core Services**:
-- **Claude Code Skills**: 15+ AI-powered skills for autonomous task execution
-- **Obsidian Vault**: Local-first storage and real-time dashboard
-- **Trust Evaluator**: <10ms trust rule evaluation for approval decisions
-- **Rate Limiter**: Token bucket algorithm protecting 8+ API quotas
-- **GDPR Exporter**: Complete data portability for Article 20 compliance
+**Platinum Tier Services (Cloud + Local)**:
+- **VaultSyncService**: Git-based bidirectional vault synchronization (5-minute interval)
+- **ClaimManager**: Advisory lock management for distributed task coordination
+- **HealthMonitor**: System supervision with auto-restart (60s checks)
+- **AlertManager**: Rate-limited notifications (email, webhook)
 
-### Folder Structure
+**Platinum Tier - Cloud Instance**:
+- **Gmail Watcher** (24/7 continuous mode)
+- **Filesystem Watcher** (monitors Cloud_Dropzone)
+- **Health Monitor** (watchdog with systemd integration)
+
+**Platinum Tier - Local Instance**:
+- All Bronze/Silver/Gold processes
+- **WhatsApp Watcher** (local-only, never on cloud)
+- **VaultSync** + **ClaimManager** (coordination services)
+
+### Vault Folder Structure
 
 ```
 /path/to/vault/
-├── Inbox/              # Drop files here for processing
-├── Needs_Action/       # Detected emails and files
+├── Inbox/              # Drop files here (Local only)
+├── Needs_Action/       # Detected emails and files requiring action
 ├── Plans/              # AI-generated action plans
-├── Pending_Approval/   # Items requiring human approval
-├── Approved/           # Approved actions (Silver tier+)
-├── Done/               # Completed items
-├── Logs/               # JSON audit logs and performance metrics
-├── Quarantine/         # Unsafe files
+├── Pending_Approval/   # Silver/Gold tier approval queue
+├── Approved/           # Approved actions awaiting execution
+├── Done/               # Completed tasks archive
+├── Quarantine/         # Isolated unsafe files
 ├── Contacts/           # CRM contact entities (CONTACT_*.md)
-├── Expenses/           # Expense tracking entities (EXPENSE_*.md)
+├── Expenses/           # Expense tracking (EXPENSE_*.md)
 ├── Budgets/            # Monthly budget files (YYYY-MM.json)
 ├── Receipts/           # OCR-processed receipt images
 ├── Meetings/           # Meeting notes and transcriptions
-├── Calendar/           # Synced calendar events (events.json)
-├── Insights/           # Weekly analytics insights (INSIGHT_*.json)
+├── Calendar/           # Synced events (events.json)
+├── Insights/           # Weekly analytics (INSIGHT_*.json)
+├── Logs/               # Audit logs (*.jsonl)
+│   ├── audit.jsonl     # Complete action history
+│   ├── sync.jsonl      # Vault synchronization events
+│   ├── claims.jsonl    # Task claim/release events
+│   ├── health.jsonl    # System health snapshots
+│   └── alerts.jsonl    # Alert notifications
+├── Cloud_Drafts/       # Platinum: Cloud-generated drafts
+├── Needs_Local/        # Platinum: Tasks requiring local execution
+├── Claims/             # Platinum: Active task claims
+├── Health/             # Platinum: Health snapshots (*.health.json)
 ├── Dashboard.md        # Real-time status summary
 └── Company_Handbook.md # AI behavior rules and trust policies
 ```
+
+### Technology Stack
+
+**Core**:
+- Python 3.13+ (type-safe, modern async/await)
+- Obsidian (local-first knowledge vault)
+- Claude Code CLI (AI-powered execution)
+
+**APIs & Integrations**:
+- Gmail API (email automation)
+- Google Calendar API (scheduling)
+- Zoom API (meeting transcription)
+- WhatsApp Business API (messaging)
+- LinkedIn/Facebook/Twitter APIs (social media)
+
+**Infrastructure (Platinum Tier)**:
+- Git (vault synchronization)
+- systemd (service management)
+- Ubuntu 22.04 LTS (cloud deployment)
+- psutil (health monitoring)
+
+**Security & Privacy**:
+- AES-256-GCM encryption
+- detect-secrets (secret scanning)
+- pre-commit hooks (Git hygiene)
+- Local-first architecture (GDPR compliant)
 
 ## Usage
 
 ### Daily Workflow
 
-1. Open Obsidian vault
-2. Check `Dashboard.md` for pending items
-3. Review `/Needs_Action/` for urgent emails/files
-4. Check `/Plans/` for AI-generated action plans
-5. Move completed items to `/Done/`
+1. **Morning**: Check `Dashboard.md` for overnight activity (Cloud handled triage)
+2. **Review**: Process items in `/Needs_Action/` and `/Cloud_Drafts/`
+3. **Approve**: Move approved items to `/Approved/` for execution
+4. **Monitor**: Check `/Logs/health.jsonl` for system status
+5. **Archive**: Move completed items to `/Done/`
 
 ### Adding Files
 
-Drop any file into `/Inbox/` folder → File appears in `/Needs_Action/` within 30 seconds
+Drop any file into `/Inbox/` → Appears in `/Needs_Action/` within 30 seconds
+
+### Email Processing (Platinum Tier)
+
+**Cloud Instance (24/7)**:
+- Detects emails within 1 minute
+- Generates draft responses
+- Saves to `/Cloud_Drafts/`
+
+**Local Instance**:
+- Detects cloud drafts
+- Moves to `/Pending_Approval/`
+- You approve → Sends email
 
 ### Monitoring System
 
 ```bash
-# Check watcher status
+# Local instance (PM2)
 pm2 status
-
-# View recent logs
 pm2 logs --lines 50
 
-# Restart if needed
-pm2 restart all
+# Cloud instance (systemd)
+sudo systemctl status health-monitor.service
+sudo journalctl -u gmail-watcher.service -f
+
+# Health snapshots
+cat /opt/ai-employee/Logs/health.jsonl | tail -10
+
+# Generate weekly report
+python -m src.services.health_monitor weekly-report --instance cloud
 ```
 
-## Development
+## Configuration
 
-### Project Structure
+### Watcher Settings
 
+All watcher configuration is centralized in **`config/watchers.yaml`**:
+
+```yaml
+global:
+  default_check_interval: 120  # seconds
+  max_consecutive_errors: 5
+  max_backoff_seconds: 300
+
+gmail_watcher:
+  mode: continuous  # "once" or "continuous"
+  urgent_keywords: [urgent, asap, invoice, deadline]
+  api_rate_limit:
+    max_requests_per_minute: 250
+  allowed_instances: [local, cloud]
+
+whatsapp_watcher:
+  allowed_instances: [local]  # Never on cloud (secrets)
+  requires_secrets: true
+
+health_monitor:
+  thresholds:
+    cpu_percent: 90
+    memory_percent: 85
+    disk_percent: 90
+  reports:
+    weekly_enabled: true
 ```
-ai-employee/
-├── src/
-│   ├── watchers/          # Gmail and File System watchers
-│   ├── models/            # Data models (Email, FileDrop, etc.)
-│   ├── services/          # Gmail, Vault, Logger services
-│   └── orchestrator.py    # Main coordinator
-├── .claude/commands/      # Claude Code skills
-├── tests/                 # Unit and integration tests
-├── scripts/               # Setup utilities
-└── specs/                 # Feature specifications
-```
 
-### Running Tests
+### Work-Zone Routing Rules
 
-```bash
-# Run all tests
-uv run pytest
+Configure in **`Company_Handbook.md`**:
 
-# Run with coverage
-uv run pytest --cov=src --cov-report=html
+```yaml
+routing_rules:
+  - pattern: "EMAIL_*"
+    action: "reply_draft"
+    zone: "cloud"        # Cloud generates drafts
+    requires_approval: true
+
+  - pattern: "WHATSAPP_*"
+    action: "send_message"
+    zone: "local"        # Local only (secrets)
+    requires_approval: false
 ```
 
 ## Documentation
 
-### Bronze Tier
-- **[Quickstart Guide](specs/001-bronze-tier-mvp/quickstart.md)** - 10-minute setup
-- **[Feature Specification](specs/001-bronze-tier-mvp/spec.md)** - Requirements and user stories
-- **[Implementation Plan](specs/001-bronze-tier-mvp/plan.md)** - Architecture and decisions
-- **[Data Model](specs/001-bronze-tier-mvp/data-model.md)** - Entity definitions
-- **[File Interfaces](specs/001-bronze-tier-mvp/contracts/file-interfaces.md)** - Communication contracts
+### Tier-Specific Guides
 
-### Silver Tier
-- **[Setup Guide](SILVER_TIER_SETUP.md)** - Silver Tier installation and configuration
-- **[Feature Specification](specs/002-silver-tier-upgrade/spec.md)** - Silver Tier requirements
+**Bronze Tier**:
+- [Quickstart Guide](specs/001-bronze-tier-mvp/quickstart.md) - 10-minute setup
+- [Feature Specification](specs/001-bronze-tier-mvp/spec.md)
+- [Data Model](specs/001-bronze-tier-mvp/data-model.md)
 
-### Gold Tier **NEW**
-- **[Setup Guide](docs/gold-tier-setup.md)** - Complete setup for all 8 user stories
-- **[Troubleshooting Guide](docs/gold-tier-troubleshooting.md)** - 50+ common scenarios and fixes
-- **[Encryption & Backup](docs/encryption-backup.md)** - Key management and GDPR data export
-- **[Feature Specification](specs/003-gold-tier-upgrade/spec.md)** - Gold Tier requirements and architecture
-- **[Task List](specs/003-gold-tier-upgrade/tasks.md)** - Implementation tasks and progress
+**Silver Tier**:
+- [Setup Guide](SILVER_TIER_SETUP.md)
+- [Feature Specification](specs/002-silver-tier-upgrade/spec.md)
+
+**Gold Tier**:
+- [Setup Guide](docs/gold-tier-setup.md) - All 8 user stories
+- [Troubleshooting](docs/gold-tier-troubleshooting.md) - 50+ scenarios
+- [Encryption & Backup](docs/encryption-backup.md) - GDPR compliance
+
+**Platinum Tier**:
+- [Deployment Guide](PLATINUM_TIER_DEPLOYMENT.md) - Cloud VM setup
+- [Testing Guide](PLATINUM_TIER_TESTING.md) - Complete test suite
+- [Feature Specification](specs/004-platinum-tier-upgrade/spec.md)
+- [Task Checklist](specs/004-platinum-tier-upgrade/tasks.md) - 147 tasks
+
+### Development Resources
+
+- [Architecture Decision Records](history/adr/) - Technical decisions
+- [Prompt History](history/prompts/) - Complete conversation logs
+- [Project Constitution](.specify/memory/constitution.md) - Core principles
 
 ## Security & Privacy
 
-- ✅ **Local-first**: All data stored locally in Obsidian vault
-- ✅ **AES-256-GCM Encryption**: Sensitive contact data encrypted at rest
-- ✅ **No cloud sync of credentials**: Gmail tokens stored outside vault
-- ✅ **Audit logging**: All actions logged to `/Logs/` with 90-day retention
-- ✅ **File quarantine**: Executable files automatically isolated
-- ✅ **Rate limiting**: Token bucket algorithm protects 8+ API quotas
-- ✅ **Trust evaluation**: <10ms policy enforcement for autonomous actions
-- ✅ **GDPR compliance**: Article 20 data portability with one-command export
-- ✅ **Encryption key backup**: Secure key rotation and recovery procedures
+### Constitutional Principles
+
+The system follows strict privacy and security principles:
+
+**Principle I - Local-First Privacy**:
+- ✅ All secrets remain on local instance
+- ✅ WhatsApp sessions never sync to cloud
+- ✅ Banking credentials local-only
+- ✅ AES-256-GCM encryption for sensitive data
+
+**Principle III - Security & Credential Management**:
+- ✅ Complete audit logging (all actions tracked)
+- ✅ Pre-commit secret scanning (detect-secrets)
+- ✅ Git-based vault sync (no secrets)
+- ✅ systemd security hardening (NoNewPrivileges, PrivateTmp)
+
+**Principle VII - Observability**:
+- ✅ Structured JSONL logging
+- ✅ Health monitoring every 60s
+- ✅ Weekly analytics reports
+- ✅ Real-time metrics dashboard
+
+### GDPR Compliance
+
+- ✅ **Article 20 - Data Portability**: One-command export
+- ✅ **Article 17 - Right to Erasure**: Complete data deletion
+- ✅ **Article 32 - Security**: AES-256-GCM encryption
+- ✅ **Article 30 - Records**: Complete audit logs (90-day retention)
 
 ## Troubleshooting
 
-### Gmail Watcher not detecting emails
+### Common Issues
 
+**Gmail watcher not detecting emails**:
 ```bash
-# Check PM2 logs
+# Check logs
 pm2 logs gmail-watcher --lines 50
 
-# Common fixes:
-# - Delete token.json and re-authenticate
-# - Verify credentials.json exists
-# - Check internet connection
+# Re-authenticate
+rm token.json
+uv run python src/watchers/gmail_watcher.py --auth-only
 ```
 
-### File System Watcher not detecting files
-
+**Cloud sync not working**:
 ```bash
-# Verify vault path
-echo $VAULT_PATH
+# Check sync logs
+tail -f Logs/sync.jsonl
 
-# Check watcher logs
-pm2 logs fs-watcher
+# Manually trigger sync
+python -m src.services.vault_sync_service sync --direction bidirectional
 
-# Ensure /Inbox folder exists
-ls /path/to/vault/Inbox
+# Check Git status
+git status
+git log --oneline -5
 ```
 
-### Dashboard not updating
-
+**Health monitor showing critical**:
 ```bash
-# Restart orchestrator
-pm2 restart orchestrator
+# Check health snapshot
+cat Health/cloud_$(date +%Y%m%d)*.health.json | tail -1
 
-# Manually trigger update
-claude "Use dashboard-updater skill to refresh Dashboard.md"
+# Check watcher status
+systemctl status gmail-watcher.service
+systemctl status filesystem-watcher.service
+
+# Restart failed watcher
+sudo systemctl restart gmail-watcher.service
 ```
 
-## Next Steps
+**High resource usage**:
+```bash
+# Check resource limits
+systemctl cat health-monitor.service | grep -E "CPU|Memory"
 
-Gold Tier is now complete with 8 fully autonomous user stories!
+# Monitor in real-time
+top -p $(pgrep -f gmail_watcher)
 
-**Recommended Next Steps**:
-1. **Production Hardening**: Add error recovery, retry logic, and comprehensive logging
-2. **Multi-user Support**: Extend to support team workflows and shared calendars
-3. **Mobile App**: Build companion mobile app for on-the-go approvals
-4. **Advanced Analytics**: Machine learning models for predictive task suggestions
-5. **Integration Expansion**: Add Slack, Microsoft Teams, Notion, Asana integrations
+# Generate health report
+python -m src.services.health_monitor report --date $(date +%Y-%m-%d)
+```
 
-**Current Implementation Status**:
-- ✅ Bronze Tier: Monitoring & Planning (3 processes)
-- ✅ Silver Tier: Execution & Automation (3 processes)
-- ✅ Gold Tier: Intelligent Autonomy (4 processes, 8 user stories)
+For comprehensive troubleshooting, see:
+- **Gold Tier**: [docs/gold-tier-troubleshooting.md](docs/gold-tier-troubleshooting.md)
+- **Platinum Tier**: [PLATINUM_TIER_DEPLOYMENT.md](PLATINUM_TIER_DEPLOYMENT.md) (Troubleshooting section)
 
-See `specs/003-gold-tier-upgrade/tasks.md` for detailed implementation checklist.
+## Performance & Scalability
+
+### Benchmarks
+
+**Bronze/Silver/Gold Tier (Local)**:
+- Gmail check latency: <500ms
+- File detection latency: <1s (watchdog)
+- Dashboard update: <2s
+- Memory usage: ~150MB per watcher
+
+**Platinum Tier (Cloud)**:
+- Health check interval: 60s
+- Vault sync interval: 300s (5 minutes)
+- Claim TTL: 900s (15 minutes)
+- Cloud VM requirements: 2 CPU, 4GB RAM, 50GB disk
+
+**Resource Limits (systemd)**:
+- health-monitor: 20% CPU, 512MB RAM
+- gmail-watcher: 15% CPU, 384MB RAM
+- filesystem-watcher: 10% CPU, 256MB RAM
+
+## Roadmap
+
+### Current Status (March 2026)
+
+- ✅ **Bronze Tier**: Complete (Monitoring & Planning)
+- ✅ **Silver Tier**: Complete (Execution & Automation)
+- ✅ **Gold Tier**: Complete (Intelligent Autonomy - 8 user stories)
+- ⚡ **Platinum Tier**: 60% Complete (Cloud & Enterprise)
+  - ✅ Foundational services (vault sync, claims, health)
+  - ✅ Cloud deployment automation
+  - ✅ 24/7 watchers with health monitoring
+  - ⏳ Odoo integration (in progress)
+  - ⏳ Offline resilience (in progress)
+
+### Next Milestones
+
+**Platinum Tier Completion** (Q2 2026):
+- [ ] Odoo cloud-hosted accounting with expense sync
+- [ ] Offline queue-based operation
+- [ ] Production hardening and polish
+- [ ] Complete acceptance testing on Cloud VM
+
+**Future Enhancements**:
+- Multi-user team support
+- Mobile companion app for approvals
+- Advanced ML-based task prediction
+- Additional integrations (Slack, Teams, Notion)
 
 ## License
 
-[Add your license here]
+MIT License - See [LICENSE](LICENSE) for details
 
 ## Contributing
 
-[Add contribution guidelines here]
+Contributions welcome! This project follows:
+- **Spec-Driven Development**: All features start with specification
+- **Constitutional AI**: Strict adherence to privacy/security principles
+- **Test-First**: Acceptance tests before implementation
+- **Prompt History**: All work logged as PHR (Prompt History Records)
+
+See [.specify/README.md](.specify/README.md) for development workflow.
+
+## Acknowledgments
+
+Built with:
+- **Claude Code** - AI-powered development assistant
+- **Anthropic Claude** - Language model (Sonnet 4.5)
+- **Obsidian** - Local-first knowledge management
+- **Python** - Core implementation language
+
+## Support
+
+- **Issues**: [GitHub Issues](https://github.com/DanishHaji/Personal-AI-Employee-Hackathon-0/issues)
+- **Documentation**: See `/docs` and `/specs` directories
+- **Prompt History**: Complete conversation logs in `/history/prompts`
+
+---
+
+**Status**: In active development | **Last Updated**: March 12, 2026 | **Version**: 0.4.0 (Platinum Tier)
