@@ -766,6 +766,165 @@ class HealthMonitor:
 
         return report
 
+    def generate_weekly_report(self, week_start: Optional[str] = None) -> HealthReport:
+        """
+        Generate weekly health report aggregating 7-day snapshots.
+
+        Platinum Tier US6 - T088: Weekly health report generation.
+
+        Args:
+            week_start: Week start date (YYYY-MM-DD), defaults to last Monday
+
+        Returns:
+            HealthReport with aggregated weekly statistics
+        """
+        if week_start is None:
+            # Default to last Monday
+            today = datetime.now()
+            days_since_monday = today.weekday()  # 0 = Monday, 6 = Sunday
+            last_monday = today - timedelta(days=days_since_monday)
+            report_start = last_monday.replace(hour=0, minute=0, second=0, microsecond=0)
+        else:
+            report_start = datetime.fromisoformat(week_start)
+
+        end_time = report_start + timedelta(days=7)
+
+        # Collect snapshots for the week
+        snapshots = self._load_snapshots_in_range(report_start, end_time)
+
+        if not snapshots:
+            logger.warning(f"No health snapshots found for week starting {report_start.date()}")
+            return HealthReport(
+                instance=self.instance,
+                report_type="weekly",
+                start_time=report_start.isoformat(),
+                end_time=end_time.isoformat(),
+                uptime_percentage=0.0,
+                total_restarts=0,
+                average_cpu=0.0,
+                average_memory=0.0,
+                peak_cpu=0.0,
+                peak_memory=0.0,
+                total_alerts=0,
+                alert_breakdown={},
+                watcher_statistics={}
+            )
+
+        # Aggregate metrics
+        total_snapshots = len(snapshots)
+        healthy_snapshots = sum(1 for s in snapshots if s["status"] == "healthy")
+        uptime_percentage = (healthy_snapshots / total_snapshots) * 100
+
+        cpu_values = [s["resources"]["cpu_percent"] for s in snapshots]
+        memory_values = [s["resources"]["memory_percent"] for s in snapshots]
+
+        average_cpu = sum(cpu_values) / len(cpu_values)
+        average_memory = sum(memory_values) / len(memory_values)
+        peak_cpu = max(cpu_values)
+        peak_memory = max(memory_values)
+
+        # Count alerts
+        all_alerts = []
+        for s in snapshots:
+            all_alerts.extend(s.get("alerts", []))
+
+        total_alerts = len(all_alerts)
+        alert_breakdown = {}
+        for alert in all_alerts:
+            alert_type = alert.split(":")[0] if ":" in alert else alert
+            alert_breakdown[alert_type] = alert_breakdown.get(alert_type, 0) + 1
+
+        # Watcher statistics with more detail for weekly reports
+        watcher_statistics = {}
+        for watcher_name in self.watchers.keys():
+            running_count = sum(
+                1 for s in snapshots
+                if watcher_name in s.get("watchers", {})
+                and s["watchers"][watcher_name]["status"] == "running"
+            )
+
+            # Count total restart events from health log
+            restart_count = self._count_watcher_restarts(watcher_name, report_start, end_time)
+
+            watcher_statistics[watcher_name] = {
+                "uptime_percentage": (running_count / total_snapshots) * 100,
+                "total_checks": total_snapshots,
+                "restarts": restart_count,
+                "running_checks": running_count,
+                "down_checks": total_snapshots - running_count
+            }
+
+        report = HealthReport(
+            instance=self.instance,
+            report_type="weekly",
+            start_time=report_start.isoformat(),
+            end_time=end_time.isoformat(),
+            uptime_percentage=uptime_percentage,
+            total_restarts=sum(w["restarts"] for w in watcher_statistics.values()),
+            average_cpu=average_cpu,
+            average_memory=average_memory,
+            peak_cpu=peak_cpu,
+            peak_memory=peak_memory,
+            total_alerts=total_alerts,
+            alert_breakdown=alert_breakdown,
+            watcher_statistics=watcher_statistics
+        )
+
+        # Save report
+        week_label = report_start.strftime("%Y-W%W")  # e.g., "2026-W10"
+        report_file = self.health_dir / f"{self.instance}_weekly_{week_label}.report.json"
+        with open(report_file, "w") as f:
+            json.dump(asdict(report), f, indent=2)
+
+        logger.info(f"Weekly report generated: {report_file}")
+
+        return report
+
+    def _count_watcher_restarts(
+        self,
+        watcher_name: str,
+        start_time: datetime,
+        end_time: datetime
+    ) -> int:
+        """
+        Count watcher restart events from health log.
+
+        Args:
+            watcher_name: Name of watcher
+            start_time: Start of time range
+            end_time: End of time range
+
+        Returns:
+            Number of restart events
+        """
+        restart_count = 0
+
+        if not self.health_log.exists():
+            return 0
+
+        try:
+            with open(self.health_log) as f:
+                for line in f:
+                    try:
+                        event = json.loads(line)
+
+                        # Check if this is a watcher_restarted event
+                        if (event.get("event") == "watcher_restarted" and
+                            event.get("watcher") == watcher_name):
+
+                            # Check if within time range
+                            event_time = datetime.fromisoformat(event["timestamp"])
+                            if start_time <= event_time < end_time:
+                                restart_count += 1
+
+                    except (json.JSONDecodeError, KeyError, ValueError):
+                        continue
+
+        except Exception as e:
+            logger.error(f"Failed to count restarts for {watcher_name}: {e}")
+
+        return restart_count
+
     def _save_health_snapshot(self, snapshot: HealthStatus):
         """
         Save health snapshot to vault/Health/{instance}_{timestamp}.health.json.
@@ -873,7 +1032,7 @@ def main():
     parser = argparse.ArgumentParser(description="Health Monitor for Platinum Tier")
     parser.add_argument(
         "command",
-        choices=["start", "snapshot", "report"],
+        choices=["start", "snapshot", "report", "weekly-report"],
         help="Command to run"
     )
     parser.add_argument(
@@ -895,7 +1054,11 @@ def main():
     )
     parser.add_argument(
         "--date",
-        help="Date for report generation (YYYY-MM-DD)"
+        help="Date for daily report generation (YYYY-MM-DD)"
+    )
+    parser.add_argument(
+        "--week-start",
+        help="Week start date for weekly report (YYYY-MM-DD, defaults to last Monday)"
     )
 
     args = parser.parse_args()
@@ -931,6 +1094,24 @@ def main():
         print(f"Avg Memory: {report.average_memory:.1f}%")
         print(f"Peak Memory: {report.peak_memory:.1f}%")
         print(f"Total Alerts: {report.total_alerts}")
+
+    elif args.command == "weekly-report":
+        # Generate weekly report (Platinum Tier US6 - T088)
+        report = monitor.generate_weekly_report(week_start=args.week_start)
+        print(f"Weekly Report for {args.instance}")
+        print(f"Period: {report.start_time} to {report.end_time}")
+        print(f"Uptime: {report.uptime_percentage:.1f}%")
+        print(f"Avg CPU: {report.average_cpu:.1f}%")
+        print(f"Peak CPU: {report.peak_cpu:.1f}%")
+        print(f"Avg Memory: {report.average_memory:.1f}%")
+        print(f"Peak Memory: {report.peak_memory:.1f}%")
+        print(f"Total Alerts: {report.total_alerts}")
+        print(f"Total Restarts: {report.total_restarts}")
+        print("\nWatcher Statistics:")
+        for watcher, stats in report.watcher_statistics.items():
+            print(f"  {watcher}:")
+            print(f"    Uptime: {stats['uptime_percentage']:.1f}%")
+            print(f"    Restarts: {stats['restarts']}")
 
 
 if __name__ == "__main__":

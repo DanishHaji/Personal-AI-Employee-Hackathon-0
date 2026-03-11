@@ -1,28 +1,36 @@
 #!/usr/bin/env python3
 """
-File System Watcher for Personal AI Employee - Bronze Tier MVP
+File System Watcher for Personal AI Employee - Platinum Tier
 
-Monitors /Inbox/ folder for manually dropped files.
+Monitors folders for manually dropped files with 24/7 operation.
 Creates FileDrop entity metadata files in /Needs_Action/.
 
 Implements:
 - FR-009 to FR-011: File system monitoring, file processing, quarantine
 - Contract 2: FileDrop entity file creation
 - FR-020: Heartbeat mechanism
+- Platinum Tier US6: Cloud dropzone monitoring (T081)
 
 Features:
 - Real-time file detection using watchdog library
 - Automatic file copy to /Needs_Action/ with timestamp suffix
 - Unsafe file type quarantine (.exe, .dmg, .app, .bat, .sh, .cmd, .msi, .dll)
 - Quarantine alerts for security
+- Cloud dropzone support for Cloud instance
 - Structured audit logging
 
 Usage:
-    # Run watcher
+    # Run watcher (monitors /Inbox)
     python src/watchers/filesystem_watcher.py
 
-    # Run with PM2
-    pm2 start src/watchers/filesystem_watcher.py --name fs-watcher --interpreter python3
+    # Run watcher (24/7 continuous mode - Platinum Tier)
+    python src/watchers/filesystem_watcher.py --mode continuous
+
+    # Monitor cloud dropzone (Platinum Tier)
+    python src/watchers/filesystem_watcher.py --mode continuous --watch-dir /opt/ai-employee/Cloud_Dropzone
+
+    # Run with systemd (recommended for production)
+    systemctl start filesystem-watcher.service
 """
 
 import os
@@ -430,11 +438,34 @@ The file extension `{file_type}` is classified as unsafe because it can:
 
 def main():
     """Main entry point for File System Watcher."""
+    import argparse
+    import json
+
+    # Parse command-line arguments
+    parser = argparse.ArgumentParser(
+        description="Filesystem Watcher for Personal AI Employee - Platinum Tier"
+    )
+    parser.add_argument(
+        "--mode",
+        choices=["once", "continuous"],
+        default="continuous",
+        help="Operation mode: 'once' (single check) or 'continuous' (24/7 loop, Platinum Tier)"
+    )
+    parser.add_argument(
+        "--vault-path",
+        help="Path to vault directory (overrides VAULT_PATH env var)"
+    )
+    parser.add_argument(
+        "--watch-dir",
+        help="Directory to watch (Platinum Tier: use Cloud_Dropzone for cloud instance)"
+    )
+    args = parser.parse_args()
+
     # Load environment variables
     load_dotenv()
 
-    # Get vault path from environment
-    vault_path = os.getenv('VAULT_PATH')
+    # Get vault path from environment or args
+    vault_path = args.vault_path or os.getenv('VAULT_PATH')
 
     if not vault_path:
         print("ERROR: VAULT_PATH not set in .env file", file=sys.stderr)
@@ -446,10 +477,45 @@ def main():
         print("Run: python scripts/init_vault.py --path /path/to/vault", file=sys.stderr)
         sys.exit(1)
 
+    # Platinum Tier US6 - Log watcher PID to health.jsonl (T082)
+    pid = os.getpid()
+    health_log = Path(vault_path) / "Logs" / "health.jsonl"
+    health_log.parent.mkdir(exist_ok=True)
+
+    watch_dir = args.watch_dir or str(Path(vault_path) / "Inbox")
+
+    health_event = {
+        "event": "watcher_started",
+        "watcher": "filesystem-watcher",
+        "pid": pid,
+        "mode": args.mode,
+        "watch_dir": watch_dir,
+        "timestamp": datetime.now().isoformat()
+    }
+
+    with open(health_log, "a") as f:
+        f.write(json.dumps(health_event) + "\n")
+
+    print(f"[FilesystemWatcher] Started (PID: {pid}, mode: {args.mode})")
+    print(f"[FilesystemWatcher] Watching: {watch_dir}")
+
     # Create and run watcher
     try:
         watcher = FilesystemWatcher(vault_path=vault_path)
-        watcher.run()
+
+        # Override inbox path if watch-dir specified (Platinum Tier T081)
+        if args.watch_dir:
+            watcher.inbox_folder = Path(args.watch_dir)
+            watcher.inbox_folder.mkdir(exist_ok=True)
+            print(f"[FilesystemWatcher] Using custom watch directory: {args.watch_dir}")
+
+        # Run in appropriate mode
+        if args.mode == "continuous":
+            # 24/7 continuous operation (Platinum Tier)
+            watcher.run()
+        else:
+            # Single check mode (Bronze/Silver/Gold Tier compatibility)
+            watcher.perform_check()
 
     except KeyboardInterrupt:
         print("\n[FilesystemWatcher] Stopped by user")

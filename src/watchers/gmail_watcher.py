@@ -1,31 +1,38 @@
 #!/usr/bin/env python3
 """
-Gmail Watcher for Personal AI Employee - Bronze Tier MVP
+Gmail Watcher for Personal AI Employee - Platinum Tier
 
-Monitors Gmail inbox every 2 minutes for important/urgent emails.
+Monitors Gmail inbox for important/urgent emails with 24/7 operation.
 Creates Email entity files in /Needs_Action/ folder.
 
 Implements:
 - FR-004 to FR-008: Gmail monitoring and email detection
 - Contract 1: Email entity file creation
 - FR-020: Heartbeat mechanism
+- Platinum Tier US6: 24/7 continuous operation with health monitoring
 
 Features:
-- Polls Gmail API every 2 minutes (configurable via CHECK_INTERVAL)
+- Polls Gmail API (configurable via CHECK_INTERVAL, default: 120s)
 - Filters by IMPORTANT label or urgent keywords
 - Duplicate detection via .watcher_state.json
-- Exponential backoff for rate limits
+- Exponential backoff for Gmail API rate limits (T080)
+- Priority detection for urgent/important emails (T085)
+- Event counting and error rate tracking (T083-T084)
+- PID logging to health.jsonl on startup (T082)
 - Structured audit logging
 
 Usage:
     # First-time authentication
     python src/watchers/gmail_watcher.py --auth-only
 
-    # Run watcher
+    # Run watcher (one-shot mode)
     python src/watchers/gmail_watcher.py
 
-    # Run with PM2
-    pm2 start src/watchers/gmail_watcher.py --name gmail-watcher --interpreter python3
+    # Run watcher (24/7 continuous mode - Platinum Tier)
+    python src/watchers/gmail_watcher.py --mode continuous
+
+    # Run with systemd (recommended for production)
+    systemctl start gmail-watcher.service
 """
 
 import argparse
@@ -65,7 +72,8 @@ class GmailWatcher(BaseWatcher):
         credentials_path: str | Path,
         token_path: str | Path,
         check_interval: int = 120,  # 2 minutes default (FR-004)
-        urgent_keywords: List[str] = None
+        urgent_keywords: List[str] = None,
+        mode: str = "once"  # "once" or "continuous" (Platinum Tier T079)
     ):
         """
         Initialize Gmail Watcher.
@@ -76,6 +84,7 @@ class GmailWatcher(BaseWatcher):
             token_path: Path to Gmail token.json
             check_interval: Check interval in seconds (default: 120 = 2 minutes)
             urgent_keywords: List of urgent keywords for priority detection
+            mode: Operation mode - "once" (single check) or "continuous" (24/7 loop)
         """
         super().__init__(
             vault_path=vault_path,
@@ -88,6 +97,24 @@ class GmailWatcher(BaseWatcher):
 
         # Initialize Vault service
         self.vault_service = VaultService(vault_path)
+
+        # Platinum Tier US6 - Operation mode (T079)
+        self.mode = mode
+
+        # Platinum Tier US6 - Event counting metrics (T083)
+        self.total_events_detected = 0
+        self.total_events_processed = 0
+        self.total_priority_events = 0
+
+        # Platinum Tier US6 - Error rate tracking (T084)
+        self.total_errors = 0
+        self.consecutive_errors = 0
+        self.last_error_time: Optional[datetime] = None
+
+        # Platinum Tier US6 - Exponential backoff for API errors (T080)
+        self.backoff_seconds = 1
+        self.max_backoff_seconds = 300  # 5 minutes max
+        self.backoff_multiplier = 2
 
         # Gold Tier US8 - Initialize expense tracking services
         self.expense_service = None
@@ -149,14 +176,25 @@ class GmailWatcher(BaseWatcher):
 
             print(f"[GmailWatcher] Found {len(emails)} important/urgent emails")
 
+            # Platinum Tier US6 - Update event metrics (T083)
+            self.total_events_detected += len(emails)
+
             # Process each email
             new_emails_count = 0
+            priority_count = 0
             for email_data in emails:
                 email_id = email_data['id']
 
                 # Check for duplicates (FR-007, T018)
                 if email_id in self.processed_email_ids:
                     continue  # Skip already processed
+
+                # Platinum Tier US6 - Priority detection (T085)
+                is_priority = self._detect_priority(email_data)
+                if is_priority:
+                    priority_count += 1
+                    self.total_priority_events += 1
+                    print(f"[GmailWatcher] ⚠️  PRIORITY email: {email_data['subject']}")
 
                 # Create Email entity (T017)
                 email_created = self._create_email_entity(email_data)
@@ -166,6 +204,7 @@ class GmailWatcher(BaseWatcher):
                     self.processed_email_ids.add(email_id)
                     new_emails_count += 1
                     self.increment_processed_count()
+                    self.total_events_processed += 1  # Platinum Tier US6 (T083)
 
                     # Log to audit (T021)
                     self.logger.log_email_detected(
@@ -184,13 +223,47 @@ class GmailWatcher(BaseWatcher):
             if new_emails_count > 0:
                 self._save_state()
                 print(f"[GmailWatcher] Created {new_emails_count} new email entities")
+                if priority_count > 0:
+                    print(f"[GmailWatcher] Including {priority_count} priority emails")
+
+            # Reset backoff on successful check (Platinum Tier US6 - T080)
+            self.backoff_seconds = 1
+            self.consecutive_errors = 0
 
         except HttpError as e:
+            # Platinum Tier US6 - Error rate tracking (T084)
+            self.total_errors += 1
+            self.consecutive_errors += 1
+            self.last_error_time = datetime.now()
+
             # Handle Gmail API credential expiration (T053 - Edge Case)
             if e.resp.status == 401:  # Unauthorized
                 self._handle_credential_expiration(e)
                 # Don't re-raise - allow watcher to continue with next check
                 return
+
+            # Platinum Tier US6 - Rate limiting with exponential backoff (T080)
+            elif e.resp.status == 429:  # Too Many Requests
+                self.logger.log_error(
+                    actor="gmail_watcher",
+                    error_message=f"Gmail API rate limit hit (429), backing off for {self.backoff_seconds}s",
+                    error_type="HttpError",
+                    target="inbox_check"
+                )
+                print(f"[GmailWatcher] ⚠️  Rate limit hit, backing off for {self.backoff_seconds}s", file=sys.stderr)
+
+                # Sleep with exponential backoff
+                time.sleep(self.backoff_seconds)
+
+                # Increase backoff for next time
+                self.backoff_seconds = min(
+                    self.backoff_seconds * self.backoff_multiplier,
+                    self.max_backoff_seconds
+                )
+
+                # Don't re-raise - continue with next check after backoff
+                return
+
             else:
                 # Log other HTTP errors
                 self.logger.log_error(
@@ -204,6 +277,11 @@ class GmailWatcher(BaseWatcher):
                 raise
 
         except Exception as e:
+            # Platinum Tier US6 - Error rate tracking (T084)
+            self.total_errors += 1
+            self.consecutive_errors += 1
+            self.last_error_time = datetime.now()
+
             # Log error (T021)
             self.logger.log_error(
                 actor="gmail_watcher",
@@ -463,6 +541,52 @@ class GmailWatcher(BaseWatcher):
         # (many receipts have generic names like "document.pdf")
         return True
 
+    def _detect_priority(self, email_data: Dict[str, Any]) -> bool:
+        """
+        Detect if email is high priority.
+
+        Platinum Tier US6 - T085: Priority detection for urgent emails.
+
+        Priority indicators:
+        - Has IMPORTANT label (Gmail native)
+        - Contains urgent keywords in subject
+        - Contains urgent keywords in snippet
+        - From known VIP senders (future enhancement)
+
+        Args:
+            email_data: Email metadata
+
+        Returns:
+            bool: True if email is high priority
+        """
+        # Check Gmail IMPORTANT label
+        if email_data.get('has_important', False):
+            return True
+
+        # Check subject for urgent keywords
+        subject = email_data.get('subject', '').lower()
+        for keyword in self.urgent_keywords:
+            if keyword.lower() in subject:
+                return True
+
+        # Check snippet for urgent keywords
+        snippet = email_data.get('snippet', '').lower()
+        for keyword in self.urgent_keywords:
+            if keyword.lower() in snippet:
+                return True
+
+        # Additional priority indicators
+        priority_indicators = [
+            'urgent', 'asap', 'important', 'critical',
+            'action required', 'time sensitive', 'deadline'
+        ]
+
+        for indicator in priority_indicators:
+            if indicator in subject or indicator in snippet:
+                return True
+
+        return False
+
     def _handle_credential_expiration(self, error: HttpError) -> None:
         """
         Handle Gmail API credential expiration error (T053 - Edge Case).
@@ -623,12 +747,22 @@ def main():
     """Main entry point for Gmail Watcher."""
     # Parse command-line arguments
     parser = argparse.ArgumentParser(
-        description="Gmail Watcher for Personal AI Employee"
+        description="Gmail Watcher for Personal AI Employee - Platinum Tier"
     )
     parser.add_argument(
         "--auth-only",
         action="store_true",
         help="Authenticate with Gmail API and exit (first-time setup)"
+    )
+    parser.add_argument(
+        "--mode",
+        choices=["once", "continuous"],
+        default="once",
+        help="Operation mode: 'once' (single check) or 'continuous' (24/7 loop, Platinum Tier)"
+    )
+    parser.add_argument(
+        "--vault-path",
+        help="Path to vault directory (overrides VAULT_PATH env var)"
     )
     args = parser.parse_args()
 
@@ -636,7 +770,7 @@ def main():
     load_dotenv()
 
     # Get configuration from environment
-    vault_path = os.getenv('VAULT_PATH')
+    vault_path = args.vault_path or os.getenv('VAULT_PATH')
     credentials_path = os.getenv('GMAIL_CREDENTIALS_PATH', './credentials.json')
     token_path = os.getenv('GMAIL_TOKEN_PATH', './token.json')
     check_interval = int(os.getenv('CHECK_INTERVAL', '120'))  # 2 minutes default
@@ -666,14 +800,39 @@ def main():
             credentials_path=credentials_path,
             token_path=token_path,
             check_interval=check_interval,
-            urgent_keywords=urgent_keywords
+            urgent_keywords=urgent_keywords,
+            mode=args.mode  # Platinum Tier US6 (T079)
         )
+
+        # Platinum Tier US6 - Log watcher PID to health.jsonl (T082)
+        pid = os.getpid()
+        health_log = Path(vault_path) / "Logs" / "health.jsonl"
+        health_log.parent.mkdir(exist_ok=True)
+
+        health_event = {
+            "event": "watcher_started",
+            "watcher": "gmail-watcher",
+            "pid": pid,
+            "mode": args.mode,
+            "check_interval": check_interval,
+            "timestamp": datetime.now().isoformat()
+        }
+
+        with open(health_log, "a") as f:
+            f.write(json.dumps(health_event) + "\n")
+
+        print(f"[GmailWatcher] Started (PID: {pid}, mode: {args.mode})")
 
         # Test Gmail connection
         watcher.gmail_service.test_connection()
 
         # Run watcher loop
-        watcher.run()
+        if args.mode == "continuous":
+            # 24/7 continuous operation (Platinum Tier)
+            watcher.run()
+        else:
+            # Single check mode (Bronze/Silver/Gold Tier compatibility)
+            watcher.perform_check()
 
     except KeyboardInterrupt:
         print("\n[GmailWatcher] Stopped by user")
