@@ -47,6 +47,11 @@ oauth_tokens_sensitive.json
 
 # Logs (FR-017)
 /Logs/*.json
+/Logs/health.jsonl
+/Logs/alerts.jsonl
+
+# Platinum Tier - Health monitoring (runtime data)
+/Health/
 
 # Gold Tier - Local data files
 /Calendar/events.json
