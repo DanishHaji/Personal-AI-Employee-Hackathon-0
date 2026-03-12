@@ -356,6 +356,11 @@ class HealthMonitor:
                 "service": "filesystem-watcher.service",
                 "enabled": True,
                 "failures": 0
+            },
+            "odoo": {
+                "service": "odoo.service",
+                "enabled": instance == "cloud",  # Only on cloud (Platinum Tier)
+                "failures": 0
             }
         }
 
