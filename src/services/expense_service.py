@@ -43,11 +43,19 @@ except ImportError:
     PDF2IMAGE_AVAILABLE = False
     logging.warning("pdf2image not available - install with: pip install pdf2image")
 
-from src.models.expense import Expense, ExpenseCategory, save_expense
+from src.models.expense import Expense, ExpenseCategory, save_expense, ApprovalStatus
 from src.models.budget import BudgetFile
 from src.services.audit_service import AuditService
 
 logger = logging.getLogger(__name__)
+
+# Odoo integration (Platinum Tier US5)
+try:
+    import httpx
+    HTTPX_AVAILABLE = True
+except ImportError:
+    HTTPX_AVAILABLE = False
+    logging.warning("httpx not available - Odoo sync disabled. Install with: pip install httpx")
 
 
 class ExpenseService:
@@ -67,7 +75,10 @@ class ExpenseService:
         self,
         vault_path: str | Path,
         use_vision_api: bool = False,
-        vision_api_threshold: float = 0.75
+        vision_api_threshold: float = 0.75,
+        odoo_url: Optional[str] = None,
+        odoo_api_key: Optional[str] = None,
+        odoo_database: Optional[str] = None
     ):
         """
         Initialize ExpenseService.
@@ -76,10 +87,20 @@ class ExpenseService:
             vault_path: Path to Obsidian vault
             use_vision_api: Whether to use Google Vision API for low confidence OCR
             vision_api_threshold: OCR confidence threshold to trigger Vision API fallback
+            odoo_url: Odoo instance URL (optional, for Platinum Tier)
+            odoo_api_key: Odoo API key (optional, for Platinum Tier)
+            odoo_database: Odoo database name (optional, for Platinum Tier)
         """
         self.vault_path = Path(vault_path)
         self.use_vision_api = use_vision_api and VISION_API_AVAILABLE
         self.vision_api_threshold = vision_api_threshold
+
+        # Odoo configuration (Platinum Tier US5)
+        self.odoo_url = odoo_url
+        self.odoo_api_key = odoo_api_key
+        self.odoo_database = odoo_database
+        self.odoo_enabled = bool(odoo_url and odoo_api_key and HTTPX_AVAILABLE)
+        self._odoo_client = None
 
         # Initialize directories
         self.expenses_dir = self.vault_path / "Expenses"
@@ -135,7 +156,14 @@ class ExpenseService:
         self.recurring_vendors = set()
         self._load_recurring_vendors()
 
-        logger.info(f"ExpenseService initialized (OCR: {EASYOCR_AVAILABLE}, Vision API: {self.use_vision_api})")
+        # Load Odoo category mappings
+        if self.odoo_enabled:
+            self._load_odoo_config()
+
+        logger.info(
+            f"ExpenseService initialized "
+            f"(OCR: {EASYOCR_AVAILABLE}, Vision API: {self.use_vision_api}, Odoo: {self.odoo_enabled})"
+        )
 
     @property
     def ocr_reader(self):
@@ -619,6 +647,319 @@ class ExpenseService:
             return True
 
         return False
+
+    # ==================== Odoo Integration (Platinum Tier US5) ====================
+
+    @property
+    def odoo_client(self):
+        """Lazy load httpx client for Odoo API."""
+        if self._odoo_client is None and self.odoo_enabled:
+            self._odoo_client = httpx.Client(
+                base_url=self.odoo_url,
+                headers={
+                    "Authorization": f"Bearer {self.odoo_api_key}",
+                    "Content-Type": "application/json"
+                },
+                timeout=30.0
+            )
+            logger.info("Odoo API client initialized")
+        return self._odoo_client
+
+    def _load_odoo_config(self):
+        """Load Odoo category mappings from config.json."""
+        config_path = Path(__file__).parent.parent.parent / "mcp-servers" / "odoo" / "config.json"
+
+        try:
+            with open(config_path, 'r') as f:
+                config = json.load(f)
+
+            self.odoo_category_mappings = config.get("category_mappings", {})
+            self.odoo_default_account = config.get("default_account", "600000")
+
+            logger.info(f"Loaded {len(self.odoo_category_mappings)} Odoo category mappings")
+
+        except Exception as e:
+            logger.warning(f"Failed to load Odoo config: {e}")
+            self.odoo_category_mappings = {}
+            self.odoo_default_account = "600000"
+
+    def sync_expense_to_odoo(self, expense: Expense) -> bool:
+        """
+        Sync approved expense to Odoo accounting system.
+
+        Args:
+            expense: Expense to sync (must be approved)
+
+        Returns:
+            bool: True if sync successful, False otherwise
+        """
+        if not self.odoo_enabled:
+            logger.debug("Odoo sync disabled - skipping")
+            return False
+
+        if expense.approval_status != ApprovalStatus.APPROVED:
+            logger.warning(f"Cannot sync unapproved expense: {expense.expense_id}")
+            return False
+
+        try:
+            # Map category to Odoo account code
+            category_key = expense.category.value.lower()
+            account_code = self.odoo_category_mappings.get(category_key, self.odoo_default_account)
+
+            # Prepare expense data
+            expense_data = {
+                "date": expense.expense_date.isoformat(),
+                "amount": float(expense.amount),
+                "currency": expense.currency,
+                "vendor": expense.vendor,
+                "description": expense.description or f"{expense.category.value} expense",
+                "category": expense.category.value,
+                "account_code": account_code,
+                "reference": expense.expense_id,
+                "receipt_url": expense.receipt_file
+            }
+
+            # Call Odoo API to create expense
+            response = self.odoo_client.post(
+                f"/api/expenses",
+                json=expense_data
+            )
+
+            if response.status_code in (200, 201):
+                logger.info(f"✅ Synced expense {expense.expense_id} to Odoo")
+
+                # Log sync event
+                self._log_odoo_sync(expense.expense_id, "success", response.json())
+                return True
+            else:
+                logger.error(f"Odoo sync failed: {response.status_code} - {response.text}")
+                self._log_odoo_sync(expense.expense_id, "failed", {"error": response.text})
+                return False
+
+        except Exception as e:
+            logger.exception(f"Error syncing expense {expense.expense_id} to Odoo: {e}")
+            self._log_odoo_sync(expense.expense_id, "error", {"error": str(e)})
+            return False
+
+    def sync_all_approved_expenses(self, month: Optional[str] = None) -> Dict[str, int]:
+        """
+        Batch sync all approved expenses to Odoo.
+
+        Args:
+            month: Month to sync in YYYY-MM format (default: current month)
+
+        Returns:
+            dict: Sync results with counts: {synced: int, failed: int, skipped: int}
+        """
+        if not self.odoo_enabled:
+            logger.warning("Odoo sync disabled")
+            return {"synced": 0, "failed": 0, "skipped": 0}
+
+        # Determine month to sync
+        if month is None:
+            month = date.today().strftime("%Y-%m")
+
+        logger.info(f"Starting batch sync for month: {month}")
+
+        # Find all approved expenses for the month
+        month_dir = self.expenses_dir / month
+        if not month_dir.exists():
+            logger.warning(f"No expenses found for month: {month}")
+            return {"synced": 0, "failed": 0, "skipped": 0}
+
+        results = {"synced": 0, "failed": 0, "skipped": 0}
+
+        for expense_file in month_dir.glob("EXPENSE_*.md"):
+            try:
+                expense = Expense.load_from_file(expense_file)[0]
+
+                # Check if already synced
+                if self._is_synced_to_odoo(expense.expense_id):
+                    logger.debug(f"Expense {expense.expense_id} already synced - skipping")
+                    results["skipped"] += 1
+                    continue
+
+                # Sync to Odoo
+                if self.sync_expense_to_odoo(expense):
+                    results["synced"] += 1
+                else:
+                    results["failed"] += 1
+
+            except Exception as e:
+                logger.error(f"Error processing {expense_file}: {e}")
+                results["failed"] += 1
+
+        logger.info(
+            f"Batch sync complete: {results['synced']} synced, "
+            f"{results['failed']} failed, {results['skipped']} skipped"
+        )
+
+        return results
+
+    def get_budget_status_from_odoo(self, month: str) -> Optional[Dict]:
+        """
+        Get current budget status from Odoo.
+
+        Args:
+            month: Month in YYYY-MM format
+
+        Returns:
+            dict: Budget status or None if failed
+        """
+        if not self.odoo_enabled:
+            return None
+
+        try:
+            response = self.odoo_client.get(
+                f"/api/budget",
+                params={"month": month}
+            )
+
+            if response.status_code == 200:
+                return response.json()
+            else:
+                logger.error(f"Failed to get budget status: {response.status_code}")
+                return None
+
+        except Exception as e:
+            logger.exception(f"Error getting budget status from Odoo: {e}")
+            return None
+
+    def check_budget_warnings(self, month: str) -> List[Dict]:
+        """
+        Check for budget warnings from Odoo and create alerts.
+
+        Args:
+            month: Month in YYYY-MM format
+
+        Returns:
+            list: List of budget warnings
+        """
+        warnings = []
+
+        budget_status = self.get_budget_status_from_odoo(month)
+        if not budget_status:
+            return warnings
+
+        # Check each category for threshold breaches
+        for category_data in budget_status.get("categories", []):
+            category = category_data.get("category")
+            spent = Decimal(str(category_data.get("spent", 0)))
+            budget = Decimal(str(category_data.get("budget", 0)))
+
+            if budget > 0:
+                percentage = float(spent / budget)
+
+                # Warning at 80%
+                if percentage >= 0.80 and percentage < 1.0:
+                    warnings.append({
+                        "category": category,
+                        "level": "warning",
+                        "percentage": percentage,
+                        "spent": float(spent),
+                        "budget": float(budget),
+                        "message": f"{category} budget at {percentage:.0%} ({spent}/{budget})"
+                    })
+
+                # Critical at 100%+
+                elif percentage >= 1.0:
+                    warnings.append({
+                        "category": category,
+                        "level": "critical",
+                        "percentage": percentage,
+                        "spent": float(spent),
+                        "budget": float(budget),
+                        "message": f"{category} budget EXCEEDED at {percentage:.0%} ({spent}/{budget})"
+                    })
+
+        # Create alert files for warnings
+        if warnings:
+            self._create_budget_alerts(warnings, month)
+
+        return warnings
+
+    def _create_budget_alerts(self, warnings: List[Dict], month: str):
+        """Create alert files in Needs_Action/ for budget warnings."""
+        alerts_dir = self.vault_path / "Needs_Action"
+        alerts_dir.mkdir(parents=True, exist_ok=True)
+
+        for warning in warnings:
+            category = warning["category"]
+            level = warning["level"]
+            message = warning["message"]
+
+            # Create alert file
+            alert_file = alerts_dir / f"BUDGET_ALERT_{month}_{category}_{level}.md"
+
+            alert_content = f"""---
+type: budget_alert
+category: {category}
+month: {month}
+level: {level}
+percentage: {warning['percentage']:.2f}
+spent: {warning['spent']}
+budget: {warning['budget']}
+created_at: {datetime.now().isoformat()}
+---
+
+# ⚠️ Budget Alert: {category.title()}
+
+{message}
+
+## Details
+- **Month**: {month}
+- **Category**: {category}
+- **Budget**: ${warning['budget']:.2f}
+- **Spent**: ${warning['spent']:.2f}
+- **Percentage**: {warning['percentage']:.0%}
+
+## Action Required
+{"Review and approve additional spending, or adjust budget for this category." if level == "warning" else "IMMEDIATE ATTENTION: Budget exceeded. Review expenses and take corrective action."}
+
+## View in Odoo
+[Open Odoo Budget Report]({self.odoo_url}/accounting/budget/{month})
+"""
+
+            with open(alert_file, 'w', encoding='utf-8') as f:
+                f.write(alert_content)
+
+            logger.warning(f"Created budget alert: {alert_file.name}")
+
+    def _is_synced_to_odoo(self, expense_id: str) -> bool:
+        """Check if expense has already been synced to Odoo."""
+        sync_log = self.vault_path / "Logs" / "odoo_sync.jsonl"
+
+        if not sync_log.exists():
+            return False
+
+        try:
+            with open(sync_log, 'r') as f:
+                for line in f:
+                    entry = json.loads(line)
+                    if entry.get("expense_id") == expense_id and entry.get("status") == "success":
+                        return True
+        except Exception as e:
+            logger.debug(f"Error checking sync log: {e}")
+
+        return False
+
+    def _log_odoo_sync(self, expense_id: str, status: str, details: Dict):
+        """Log Odoo sync event to odoo_sync.jsonl."""
+        sync_log = self.vault_path / "Logs" / "odoo_sync.jsonl"
+        sync_log.parent.mkdir(parents=True, exist_ok=True)
+
+        log_entry = {
+            "timestamp": datetime.now().isoformat(),
+            "expense_id": expense_id,
+            "status": status,
+            "details": details
+        }
+
+        try:
+            with open(sync_log, 'a', encoding='utf-8') as f:
+                f.write(json.dumps(log_entry, ensure_ascii=False) + '\n')
+        except Exception as e:
+            logger.error(f"Failed to write sync log: {e}")
 
 
 def main():

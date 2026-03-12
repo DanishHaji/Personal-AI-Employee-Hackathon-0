@@ -25,6 +25,7 @@ class TaskType(str, Enum):
     """Scheduled task types."""
     DAILY_BRIEFING = "daily_briefing"
     WEEKLY_SUMMARY = "weekly_summary"
+    MONTHLY_REPORT = "monthly_report"  # Platinum Tier US5 - Financial reports
     CUSTOM = "custom"
 
 

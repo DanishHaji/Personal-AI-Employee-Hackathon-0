@@ -224,6 +224,10 @@ class Scheduler:
                 result_path = self.scheduler_service.generate_weekly_summary(task)
                 success = result_path is not None
 
+            elif task.task_type == TaskType.MONTHLY_REPORT:
+                # Platinum Tier US5 - Financial reports
+                success = self._generate_monthly_financial_report(task)
+
             elif task.task_type == TaskType.CUSTOM:
                 success = self.scheduler_service.execute_custom_task(task)
 
@@ -391,6 +395,82 @@ class Scheduler:
         if next_times:
             return min(next_times)
         return None
+
+    def _generate_monthly_financial_report(self, task: ScheduledTask) -> bool:
+        """
+        Generate monthly financial report (Platinum Tier US5).
+
+        Args:
+            task: ScheduledTask to execute
+
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        import subprocess
+        from datetime import date
+
+        try:
+            # Get month from task parameters or use current
+            month = task.parameters.get("month") or date.today().strftime("%Y-%m")
+
+            logger.info(f"Generating monthly financial report for {month}")
+
+            # Run monthly report generator
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "src.scripts.generate_monthly_report",
+                    month
+                ],
+                cwd=str(self.vault_path.parent),
+                capture_output=True,
+                text=True,
+                timeout=300
+            )
+
+            if result.returncode == 0:
+                logger.info(f"✅ Monthly report generated successfully for {month}")
+
+                # Log to audit
+                self.audit_logger.log(
+                    action_type=ActionType.TASK_EXECUTION,
+                    actor=Actor.SCHEDULER,
+                    target=task.task_id,
+                    parameters={"month": month, "task_type": "monthly_report"},
+                    result=Result.SUCCESS
+                )
+
+                return True
+            else:
+                logger.error(f"Monthly report generation failed: {result.stderr}")
+
+                # Log error
+                self.audit_logger.log_error(
+                    actor=Actor.SCHEDULER,
+                    error_message=result.stderr,
+                    error_type="MonthlyReportError",
+                    target=task.task_id
+                )
+
+                return False
+
+        except subprocess.TimeoutExpired:
+            logger.error("Monthly report generation timed out after 5 minutes")
+            return False
+
+        except Exception as e:
+            logger.exception(f"Error generating monthly report: {e}")
+
+            # Log error
+            self.audit_logger.log_error(
+                actor=Actor.SCHEDULER,
+                error_message=str(e),
+                error_type=type(e).__name__,
+                target=task.task_id
+            )
+
+            return False
 
     def stop(self):
         """Stop the scheduler process gracefully."""
