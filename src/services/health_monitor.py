@@ -177,6 +177,7 @@ class AlertManager:
         # Log alert
         alert_event = {
             "event": "alert_sent",
+            "instance": self.instance,
             "alert_type": alert_type,
             "severity": severity,
             "message": message,
@@ -696,6 +697,7 @@ class HealthMonitor:
                 with open(self.health_log, "a") as f:
                     f.write(json.dumps({
                         "event": "watcher_restarted",
+                        "instance": self.instance,
                         "watcher": watcher_name,
                         "service": service_name,
                         "timestamp": datetime.now().isoformat()

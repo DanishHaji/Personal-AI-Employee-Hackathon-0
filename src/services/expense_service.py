@@ -78,7 +78,8 @@ class ExpenseService:
         vision_api_threshold: float = 0.75,
         odoo_url: Optional[str] = None,
         odoo_api_key: Optional[str] = None,
-        odoo_database: Optional[str] = None
+        odoo_database: Optional[str] = None,
+        instance: str = "local"
     ):
         """
         Initialize ExpenseService.
@@ -90,8 +91,10 @@ class ExpenseService:
             odoo_url: Odoo instance URL (optional, for Platinum Tier)
             odoo_api_key: Odoo API key (optional, for Platinum Tier)
             odoo_database: Odoo database name (optional, for Platinum Tier)
+            instance: Instance identifier ("cloud" or "local")
         """
         self.vault_path = Path(vault_path)
+        self.instance = instance
         self.use_vision_api = use_vision_api and VISION_API_AVAILABLE
         self.vision_api_threshold = vision_api_threshold
 
@@ -950,6 +953,7 @@ created_at: {datetime.now().isoformat()}
 
         log_entry = {
             "timestamp": datetime.now().isoformat(),
+            "instance": self.instance,
             "expense_id": expense_id,
             "status": status,
             "details": details

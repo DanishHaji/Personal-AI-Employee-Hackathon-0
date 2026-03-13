@@ -70,14 +70,16 @@ class Scheduler:
     Monitors Company_Handbook.md for configuration changes.
     """
 
-    def __init__(self, vault_path: str):
+    def __init__(self, vault_path: str, instance: str = "local"):
         """
         Initialize Scheduler.
 
         Args:
             vault_path: Absolute path to Obsidian vault
+            instance: Instance identifier ("cloud" or "local")
         """
         self.vault_path = Path(vault_path).resolve()
+        self.instance = instance
 
         # Initialize services
         self.vault_service = VaultService(vault_path=self.vault_path)
@@ -367,6 +369,7 @@ class Scheduler:
         # Update scheduler entry
         heartbeat_data['scheduler'] = {
             "timestamp": datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
+            "instance": self.instance,
             "status": "running",
             "tasks_loaded": len(self.tasks),
             "next_task": self._get_next_task_time()

@@ -356,14 +356,149 @@ View insights in: `/Insights/YYYY-MM-DD.json`
 - **Audit Trails**: Every action logged to `/Logs/`
 - **GDPR Compliance**: Export or delete your data anytime
 
+## Platinum Tier: Dual Work Zone Architecture
+
+**NEW in Platinum Tier**: Your AI Employee now operates across two specialized work zones for maximum security and 24/7 availability:
+
+### Work Zones
+
+**🌩️ Cloud Instance** (Always-On, 24/7)
+- **Purpose**: Draft preparation, monitoring, triage
+- **Location**: Cloud VM (DigitalOcean, AWS, etc.)
+- **Capabilities**:
+  - Email triage and draft responses
+  - Calendar monitoring
+  - Document analysis and generation
+  - Expense recording (Odoo integration)
+  - Social media drafts
+- **Restrictions**:
+  - ❌ Cannot access WhatsApp sessions
+  - ❌ Cannot access banking credentials
+  - ❌ Cannot send final emails or make payments
+  - ❌ Secrets never synced to cloud
+
+**🏠 Local Instance** (Approvals & Sensitive Actions)
+- **Purpose**: Final approvals, sensitive actions, secret access
+- **Location**: Your laptop/desktop
+- **Capabilities**:
+  - Approve/reject Cloud-drafted content
+  - Send emails (after approval)
+  - WhatsApp messaging
+  - Banking transactions
+  - All final execution actions
+- **Exclusive Access**:
+  - ✅ WhatsApp Web sessions
+  - ✅ Banking credentials
+  - ✅ Sensitive OAuth tokens
+  - ✅ All secrets stay local (never synced)
+
+### How It Works
+
+1. **Cloud Drafts**: Cloud instance detects new email, drafts reply, saves to `/Cloud_Drafts/`
+2. **Git Sync**: Vault syncs draft from Cloud to Local via Git
+3. **Local Review**: You review draft on Local instance, move to `/Approved/` or `/Rejected/`
+4. **Local Execution**: Local instance sends approved email, logs action
+5. **Offline Resilience**: If network fails, changes queue and auto-sync on reconnect
+
+### Routing Rules
+
+Actions are automatically routed to the appropriate work zone:
+
+| Action Type | Draft/Prepare | Execute/Send | Approval Required |
+|------------|---------------|--------------|-------------------|
+| Email Reply | ☁️ Cloud | 🏠 Local | ✅ Yes |
+| WhatsApp Message | N/A | 🏠 Local Only | ❌ No |
+| Social Media Post | ☁️ Cloud | 🏠 Local | ✅ Yes |
+| Document Generation | ☁️ Cloud | Auto | ⚠️ Configurable |
+| Calendar Scheduling | ☁️ Cloud | Auto | ✅ Yes |
+| Expense Recording | ☁️ Cloud | Auto (Odoo) | ❌ No |
+| Banking/Payments | N/A | 🏠 Local Only | ✅ Always |
+
+### Security Guarantees
+
+1. **Secrets Never Leave Local**: WhatsApp sessions, banking credentials, sensitive tokens never sync to cloud
+2. **detect-secrets Integration**: Automatic secret scanning prevents accidental exposure
+3. **Work Zone Enforcement**: Cloud cannot execute final actions even if secrets were present
+4. **Audit Trails**: Every action logged with instance identifier (cloud/local)
+5. **Offline Resilience**: Queue-based sync ensures zero data loss during network outages
+
+### Configuration
+
+Set your instance type in `system.instance`:
+
+```yaml
+system:
+  instance: local  # or "cloud"
+  tier: platinum
+  version: "0.4.0"
+```
+
+**Cloud Instance** (`.env.cloud`):
+```bash
+INSTANCE=cloud
+VAULT_PATH=/opt/ai-employee/vault
+GMAIL_READONLY=true  # Cloud only reads emails
+```
+
+**Local Instance** (`.env`):
+```bash
+INSTANCE=local
+VAULT_PATH=/Users/you/vault
+GMAIL_READONLY=false  # Local can send emails
+WHATSAPP_SESSION_PATH=/Users/you/.whatsapp-session
+```
+
+### Monitoring
+
+- **Health Status**: Both instances report health to `/Logs/health.jsonl`
+- **Sync Status**: Vault sync events logged to `/Logs/sync.jsonl`
+- **Offline Alerts**: Email notifications if either instance offline >24 hours
+- **Queue Status**: Pending sync items in `/Sync_Queue/`
+
+View real-time status in `/Dashboard.md`
+
+### Odoo Accounting Integration
+
+**Cloud instance** automatically syncs approved expenses to Odoo:
+
+- **Real-time budget tracking**: Budgets from Odoo chart of accounts
+- **Monthly financial reports**: Auto-generated on 1st of month
+- **Budget warnings**: Alerts at 80% and 100% thresholds
+- **Professional accounting**: Double-entry bookkeeping, vendor management
+
+Configure Odoo in `.env.cloud`:
+```bash
+ODOO_URL=https://odoo.yourdomain.com
+ODOO_DATABASE=odoo
+ODOO_API_KEY=your_api_key_here
+```
+
+See `/mcp-servers/odoo/README.md` for full setup instructions.
+
+### Offline Resilience
+
+Platinum Tier guarantees zero data loss during network outages:
+
+- **Automatic Queueing**: Changes commit locally and queue when offline
+- **Auto-Retry**: Queue processes automatically on reconnect
+- **Conflict Resolution**: Simultaneous claims resolved by earliest timestamp
+- **Isolated Mode**: Continues operating offline for 24+ hours
+- **Email Escalation**: Critical alerts if instance offline >24 hours
+
+Queue items stored in `/Sync_Queue/` and automatically cleaned up after 24 hours.
+
 ## Support
 
 For questions or issues:
 
 1. Check the `/docs/` folder for documentation
-2. Review the specification: `/specs/003-gold-tier-upgrade/spec.md`
+2. Review specifications:
+   - Gold Tier: `/specs/003-gold-tier-upgrade/spec.md`
+   - Platinum Tier: `/specs/004-platinum-tier-upgrade/spec.md`
 3. Check audit logs: `/Logs/YYYY-MM-DD.json`
+4. Deployment guide: `/deployment/README.md`
+5. Troubleshooting: `/docs/troubleshooting-platinum.md`
 
 ---
 
-**Last Updated**: 2026-03-01 | **Version**: 0.3.0 (Gold Tier)
+**Last Updated**: 2026-03-14 | **Version**: 0.4.0 (Platinum Tier)
