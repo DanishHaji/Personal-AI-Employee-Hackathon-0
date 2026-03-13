@@ -8,6 +8,8 @@ Core functionality:
 - Secret detection and filtering using detect-secrets
 - Conflict detection and resolution
 - Sync event logging
+- Offline queueing for failed syncs (Platinum Tier US4)
+- Automatic retry on network restore (Platinum Tier US4)
 
 Constitutional Compliance:
 - Local-First Privacy (Principle I): Secrets never sync to cloud
@@ -15,12 +17,24 @@ Constitutional Compliance:
 """
 
 import json
+import socket
 import subprocess
+import time
 from dataclasses import dataclass, field, asdict
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 import logging
+
+# Offline resilience imports (Platinum Tier US4)
+from src.models.sync_queue_item import (
+    SyncQueueItem,
+    QueueItemType,
+    QueueItemStatus,
+    get_queue_directory,
+    load_pending_queue_items,
+    cleanup_completed_queue_items
+)
 
 
 @dataclass
@@ -88,7 +102,288 @@ class VaultSyncService:
         self.sync_log_path = self.logs_dir / "sync.jsonl"
         self.conflicts_log_path = self.logs_dir / "sync_conflicts.jsonl"
 
+        # Offline resilience (Platinum Tier US4 - T121-T124)
+        self.queue_dir = get_queue_directory(self.vault_path)
+        self.queue_dir.mkdir(exist_ok=True)
+
+        # Track offline/online state
+        self.is_offline = False
+        self.offline_since: Optional[datetime] = None
+        self.last_successful_sync: Optional[datetime] = None
+
+        # Network connectivity settings
+        self.connectivity_check_timeout = 5  # seconds
+        self.connectivity_check_host = "8.8.8.8"  # Google DNS for connectivity check
+        self.connectivity_check_port = 53
+
         self.logger.info(f"VaultSyncService initialized: vault={self.vault_path}, instance={self.instance}")
+
+    # ==================== Offline Resilience (Platinum Tier US4) ====================
+
+    def check_network_connectivity(self) -> bool:
+        """
+        Check if network connection is available.
+
+        Returns:
+            bool: True if network is available, False otherwise
+        """
+        try:
+            # Attempt to create socket connection to DNS server
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(self.connectivity_check_timeout)
+            sock.connect((self.connectivity_check_host, self.connectivity_check_port))
+            sock.close()
+            return True
+
+        except (socket.timeout, socket.error, OSError):
+            return False
+
+    def update_offline_status(self, sync_successful: bool):
+        """
+        Update offline/online status based on sync result.
+
+        Args:
+            sync_successful: Whether the last sync was successful
+        """
+        if sync_successful:
+            # Transitioned to online
+            if self.is_offline:
+                offline_duration = (datetime.now() - self.offline_since).total_seconds() if self.offline_since else 0
+                self.logger.info(f"Network restored after {offline_duration:.0f} seconds offline")
+
+                # Log offline period
+                self._log_offline_period(self.offline_since, datetime.now())
+
+            self.is_offline = False
+            self.offline_since = None
+            self.last_successful_sync = datetime.now()
+
+        else:
+            # Transitioned to offline
+            if not self.is_offline:
+                self.logger.warning("Network appears offline - entering offline mode")
+                self.is_offline = True
+                self.offline_since = datetime.now()
+
+    def queue_changes_for_sync(self, direction: str = "push") -> SyncQueueItem:
+        """
+        Queue uncommitted changes for later sync when network is restored.
+
+        Args:
+            direction: Sync direction (usually "push")
+
+        Returns:
+            SyncQueueItem: Created queue item
+
+        Raises:
+            ValueError: If no changes to queue
+        """
+        # Get list of modified files
+        status_result = subprocess.run(
+            ["git", "status", "--porcelain"],
+            cwd=self.vault_path,
+            capture_output=True,
+            text=True,
+            check=True
+        )
+
+        modified_files = []
+        for line in status_result.stdout.strip().split("\n"):
+            if line:
+                # Parse git status output (first 2 chars are status, rest is file path)
+                file_path = line[3:].strip()
+                modified_files.append(file_path)
+
+        if not modified_files:
+            raise ValueError("No changes to queue")
+
+        # Check for uncommitted changes and commit them
+        commit_hash = None
+        commit_message = None
+
+        if modified_files:
+            # Stage all changes
+            subprocess.run(
+                ["git", "add", "-A"],
+                cwd=self.vault_path,
+                check=True
+            )
+
+            # Create commit
+            commit_message = f"Offline queue: {len(modified_files)} changes from {self.instance}"
+            subprocess.run(
+                ["git", "commit", "-m", commit_message],
+                cwd=self.vault_path,
+                capture_output=True,
+                check=True
+            )
+
+            # Get commit hash
+            hash_result = subprocess.run(
+                ["git", "rev-parse", "HEAD"],
+                cwd=self.vault_path,
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            commit_hash = hash_result.stdout.strip()
+
+        # Create queue item
+        queue_item = SyncQueueItem.create(
+            item_type=QueueItemType.GIT_COMMIT,
+            instance=self.instance,
+            file_paths=modified_files,
+            change_type="modified",
+            commit_hash=commit_hash,
+            commit_message=commit_message,
+            priority=7,  # Higher priority for queued commits
+            metadata={
+                "direction": direction,
+                "queued_at": datetime.now().isoformat()
+            }
+        )
+
+        # Save queue item
+        queue_item.save_to_file(self.queue_dir)
+
+        self.logger.info(f"Queued {len(modified_files)} changes: {queue_item.queue_id}")
+
+        return queue_item
+
+    def process_sync_queue(self) -> Dict[str, int]:
+        """
+        Process all pending queue items and attempt to sync them.
+
+        Returns:
+            dict: Results with counts {synced: int, failed: int, skipped: int}
+        """
+        results = {"synced": 0, "failed": 0, "skipped": 0}
+
+        # Check network connectivity first
+        if not self.check_network_connectivity():
+            self.logger.debug("Network unavailable - skipping queue processing")
+            return results
+
+        # Load pending queue items
+        queue_items = load_pending_queue_items(self.vault_path)
+
+        if not queue_items:
+            return results
+
+        self.logger.info(f"Processing {len(queue_items)} queued items")
+
+        for item in queue_items:
+            try:
+                # Check if item can retry
+                if not item.can_retry():
+                    self.logger.warning(f"Queue item {item.queue_id} exceeded max retries - abandoning")
+                    item.status = QueueItemStatus.ABANDONED
+                    item.save_to_file(self.queue_dir)
+                    results["skipped"] += 1
+                    continue
+
+                # Mark as syncing
+                item.mark_syncing()
+                item.save_to_file(self.queue_dir)
+
+                # Attempt to push the queued commit
+                push_result = self._git_push()
+
+                if push_result["secrets_blocked"]:
+                    error_msg = f"Secrets blocked: {push_result['secrets_blocked']}"
+                    item.mark_attempt(error=error_msg)
+                    item.save_to_file(self.queue_dir)
+                    results["failed"] += 1
+                else:
+                    # Success
+                    item.mark_attempt(error=None)
+                    item.save_to_file(self.queue_dir)
+                    results["synced"] += 1
+
+                    self.logger.info(f"Successfully synced queue item: {item.queue_id}")
+
+            except Exception as e:
+                self.logger.error(f"Failed to sync queue item {item.queue_id}: {e}")
+
+                item.mark_attempt(error=str(e))
+                item.save_to_file(self.queue_dir)
+                results["failed"] += 1
+
+        # Cleanup old completed items
+        cleanup_completed_queue_items(self.vault_path, max_age_hours=24)
+
+        self.logger.info(
+            f"Queue processing complete: {results['synced']} synced, "
+            f"{results['failed']} failed, {results['skipped']} skipped"
+        )
+
+        return results
+
+    def get_offline_duration(self) -> Optional[timedelta]:
+        """
+        Get current offline duration if offline.
+
+        Returns:
+            timedelta: Duration offline, or None if online
+        """
+        if self.is_offline and self.offline_since:
+            return datetime.now() - self.offline_since
+        return None
+
+    def is_isolated_mode(self, threshold_hours: int = 24) -> bool:
+        """
+        Check if instance should enter isolated mode due to prolonged offline.
+
+        Args:
+            threshold_hours: Hours offline before entering isolated mode
+
+        Returns:
+            bool: True if offline longer than threshold
+        """
+        offline_duration = self.get_offline_duration()
+
+        if offline_duration:
+            return offline_duration.total_seconds() / 3600 > threshold_hours
+
+        return False
+
+    def _log_offline_period(self, start_time: datetime, end_time: datetime):
+        """
+        Log offline period to sync.jsonl.
+
+        Args:
+            start_time: When offline period started
+            end_time: When offline period ended
+        """
+        duration_seconds = (end_time - start_time).total_seconds()
+
+        offline_event = {
+            "event_type": "offline_period",
+            "instance": self.instance,
+            "start_time": start_time.isoformat(),
+            "end_time": end_time.isoformat(),
+            "duration_seconds": duration_seconds,
+            "duration_human": self._format_duration(duration_seconds)
+        }
+
+        try:
+            with open(self.sync_log_path, 'a', encoding='utf-8') as f:
+                f.write(json.dumps(offline_event, ensure_ascii=False) + '\n')
+        except Exception as e:
+            self.logger.error(f"Failed to log offline period: {e}")
+
+    def _format_duration(self, seconds: float) -> str:
+        """Format duration in human-readable format."""
+        if seconds < 60:
+            return f"{seconds:.0f}s"
+        elif seconds < 3600:
+            return f"{seconds/60:.0f}m"
+        elif seconds < 86400:
+            return f"{seconds/3600:.1f}h"
+        else:
+            return f"{seconds/86400:.1f}d"
+
+    # ==================== End Offline Resilience ====================
 
     def filter_secrets(self) -> List[str]:
         """
@@ -231,6 +526,22 @@ class VaultSyncService:
 
             self.logger.info(f"Sync completed: {sync_id}, status={status}, files={files_changed}")
 
+            # Offline resilience (T124): Update status and process queue on successful sync
+            self.update_offline_status(sync_successful=(status == "success"))
+
+            # Process pending queue if sync was successful
+            if status == "success":
+                try:
+                    queue_results = self.process_sync_queue()
+
+                    if queue_results["synced"] > 0:
+                        self.logger.info(
+                            f"Synced {queue_results['synced']} queued items from offline period"
+                        )
+
+                except Exception as queue_error:
+                    self.logger.error(f"Failed to process sync queue: {queue_error}")
+
             return result
 
         except Exception as e:
@@ -249,6 +560,28 @@ class VaultSyncService:
             self._log_sync_event(result)
 
             self.logger.error(f"Sync failed: {sync_id}, error={str(e)}")
+
+            # Offline resilience (T123): Queue changes on sync failure
+            self.update_offline_status(sync_successful=False)
+
+            # Queue uncommitted changes if push direction
+            if direction in ("push", "bidirectional"):
+                try:
+                    # Check if there are changes to queue
+                    status_check = subprocess.run(
+                        ["git", "status", "--porcelain"],
+                        cwd=self.vault_path,
+                        capture_output=True,
+                        text=True
+                    )
+
+                    if status_check.stdout.strip():
+                        queue_item = self.queue_changes_for_sync(direction="push")
+                        self.logger.info(f"Queued changes for later sync: {queue_item.queue_id}")
+
+                except Exception as queue_error:
+                    self.logger.error(f"Failed to queue changes: {queue_error}")
+
             raise
 
     def _git_pull(self) -> Dict[str, Any]:

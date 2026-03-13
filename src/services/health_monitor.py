@@ -214,10 +214,12 @@ class AlertManager:
             message: Alert message
             details: Additional context
         """
-        # Email notification (if enabled)
+        # Email notification (if enabled) - Platinum Tier US4 T126
         if self.email_enabled:
-            # TODO: Integrate with email service when available
-            logger.info(f"Email notification would be sent: {message}")
+            try:
+                self._send_email_alert(alert_type, severity, message, details)
+            except Exception as e:
+                logger.error(f"Failed to send email alert: {e}")
 
         # Webhook notification (if configured)
         if self.webhook_url:
@@ -300,6 +302,100 @@ class AlertManager:
 
         except Exception as e:
             logger.error(f"Failed to rotate logs: {e}")
+
+    def _send_email_alert(
+        self,
+        alert_type: str,
+        severity: str,
+        message: str,
+        details: Optional[Dict[str, Any]]
+    ):
+        """
+        Send email alert notification (Platinum Tier US4 T126).
+
+        Args:
+            alert_type: Type of alert
+            severity: Severity level
+            message: Alert message
+            details: Additional context
+        """
+        try:
+            import smtplib
+            from email.mime.text import MIMEText
+            from email.mime.multipart import MIMEMultipart
+            import os
+
+            # Get email configuration from environment
+            smtp_server = os.getenv("EMAIL_SMTP_SERVER", "smtp.gmail.com")
+            smtp_port = int(os.getenv("EMAIL_SMTP_PORT", "587"))
+            sender_email = os.getenv("EMAIL_SENDER")
+            sender_password = os.getenv("EMAIL_PASSWORD")
+            recipient_email = os.getenv("EMAIL_ALERT_RECIPIENT")
+
+            if not all([sender_email, sender_password, recipient_email]):
+                logger.warning("Email configuration incomplete - skipping email alert")
+                return
+
+            # Create email message
+            msg = MIMEMultipart("alternative")
+            msg["Subject"] = f"[{severity.upper()}] AI Employee Alert: {alert_type}"
+            msg["From"] = sender_email
+            msg["To"] = recipient_email
+
+            # Plain text version
+            text_body = f"""
+Personal AI Employee - Critical Alert
+
+Alert Type: {alert_type}
+Severity: {severity.upper()}
+Message: {message}
+
+Details:
+{json.dumps(details or {}, indent=2)}
+
+Timestamp: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+
+This is an automated alert from your Personal AI Employee system.
+"""
+
+            # HTML version
+            html_body = f"""
+<html>
+  <body>
+    <h2>Personal AI Employee - Critical Alert</h2>
+
+    <p><strong>Alert Type:</strong> {alert_type}</p>
+    <p><strong>Severity:</strong> <span style="color: {'red' if severity == 'critical' else 'orange'};">{severity.upper()}</span></p>
+    <p><strong>Message:</strong> {message}</p>
+
+    <h3>Details:</h3>
+    <pre>{json.dumps(details or {}, indent=2)}</pre>
+
+    <p><em>Timestamp: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}</em></p>
+
+    <hr>
+    <p style="color: #666; font-size: 12px;">
+      This is an automated alert from your Personal AI Employee system.
+    </p>
+  </body>
+</html>
+"""
+
+            # Attach both versions
+            msg.attach(MIMEText(text_body, "plain"))
+            msg.attach(MIMEText(html_body, "html"))
+
+            # Send email
+            with smtplib.SMTP(smtp_server, smtp_port) as server:
+                server.starttls()
+                server.login(sender_email, sender_password)
+                server.send_message(msg)
+
+            logger.info(f"Email alert sent to {recipient_email}: {message}")
+
+        except Exception as e:
+            logger.error(f"Failed to send email alert: {e}")
+            # Don't raise - email is backup channel, shouldn't block other processing
 
 
 class HealthMonitor:
@@ -615,6 +711,79 @@ class HealthMonitor:
             logger.error(f"Failed to restart {watcher_name}: {e}")
             return False
 
+    def check_offline_escalation(self) -> Optional[str]:
+        """
+        Check if other instance (Local/Cloud) has been offline >24 hours.
+
+        Platinum Tier US4 T125: Escalation alert for prolonged offline.
+
+        Returns:
+            Alert message if escalation needed, None otherwise
+        """
+        try:
+            # Read last vault sync log to check other instance status
+            sync_log_path = self.vault_path / "Logs" / "sync.jsonl"
+
+            if not sync_log_path.exists():
+                return None
+
+            # Find most recent sync event
+            last_sync_time = None
+            other_instance = "local" if self.instance == "cloud" else "cloud"
+
+            with open(sync_log_path, 'r') as f:
+                for line in f:
+                    try:
+                        event = json.loads(line)
+
+                        # Check for successful sync from other instance
+                        if (event.get("event_type") == "offline_period" and
+                            event.get("instance") == other_instance):
+                            end_time_str = event.get("end_time")
+                            if end_time_str:
+                                last_sync_time = datetime.fromisoformat(end_time_str)
+
+                        # Or check sync_id for other instance
+                        elif event.get("sync_id", "").startswith(f"SYNC_{other_instance.upper()}"):
+                            timestamp_str = event.get("timestamp")
+                            if timestamp_str:
+                                last_sync_time = datetime.fromisoformat(timestamp_str)
+
+                    except (json.JSONDecodeError, ValueError):
+                        continue
+
+            # Check if offline for > 24 hours
+            if last_sync_time:
+                offline_duration = datetime.now() - last_sync_time
+                offline_hours = offline_duration.total_seconds() / 3600
+
+                if offline_hours > 24:
+                    # Send escalation alert
+                    escalation_message = (
+                        f"{other_instance.title()} instance offline for {offline_hours:.1f} hours "
+                        f"(>24h threshold). Last sync: {last_sync_time.strftime('%Y-%m-%d %H:%M:%S')}"
+                    )
+
+                    self.alert_manager.send_alert(
+                        alert_type="instance_offline",
+                        severity="critical",
+                        message=escalation_message,
+                        details={
+                            "instance": other_instance,
+                            "offline_hours": offline_hours,
+                            "last_sync": last_sync_time.isoformat(),
+                            "threshold_hours": 24
+                        }
+                    )
+
+                    return escalation_message
+
+            return None
+
+        except Exception as e:
+            logger.error(f"Failed to check offline escalation: {e}")
+            return None
+
     def start_watchdog(self):
         """
         Start main monitoring loop (blocking).
@@ -642,6 +811,9 @@ class HealthMonitor:
 
                 # Check disk space
                 self.alert_manager.check_disk_space()
+
+                # Check for offline escalation (T125)
+                self.check_offline_escalation()
 
                 # Check and restart failed watchers
                 for watcher_name, config in self.watchers.items():

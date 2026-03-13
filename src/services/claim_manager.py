@@ -160,9 +160,18 @@ class ClaimManager:
                 self.logger.debug(f"Task {task_id} already claimed by {zone}, returning existing claim")
                 return existing_claim
 
-            # If claimed by different zone, raise error
-            expires_at = datetime.fromisoformat(existing_claim.expires_at)
-            raise TaskAlreadyClaimedError(task_id, existing_claim.claimed_by, expires_at)
+            # Conflict resolution (Platinum Tier US4 T127-T128)
+            # If claimed by different zone, check for simultaneous claim conflict
+            conflict_resolved = self._resolve_claim_conflict(task_id, zone, existing_claim)
+
+            if conflict_resolved:
+                # Current zone won conflict resolution
+                self.logger.info(f"Claim conflict resolved in favor of {zone} for task {task_id}")
+                # existing_claim was updated to release, continue to create new claim
+            else:
+                # Existing claim wins, raise error
+                expires_at = datetime.fromisoformat(existing_claim.expires_at)
+                raise TaskAlreadyClaimedError(task_id, existing_claim.claimed_by, expires_at)
 
         # Create new claim
         claim_id = f"CLAIM_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{task_id}"
@@ -407,6 +416,102 @@ class ClaimManager:
                 })
 
                 self.logger.info(f"Task delegated to local: {task_id}, reason={reason}")
+
+    def _resolve_claim_conflict(
+        self,
+        task_id: str,
+        requesting_zone: str,
+        existing_claim: Claim
+    ) -> bool:
+        """
+        Resolve simultaneous claim conflict using earliest timestamp wins strategy.
+
+        Platinum Tier US4 T127-T128: Conflict resolution for simultaneous claims.
+
+        Args:
+            task_id: Task being claimed
+            requesting_zone: Zone requesting the claim
+            existing_claim: Existing claim from other zone
+
+        Returns:
+            bool: True if requesting zone wins (existing claim should be released),
+                  False if existing claim wins (request should be denied)
+        """
+        # Create temporary claim for comparison
+        requesting_timestamp = datetime.now()
+
+        # Parse existing claim timestamp
+        existing_timestamp = datetime.fromisoformat(existing_claim.claimed_at)
+
+        # Calculate time difference in seconds
+        time_diff = abs((requesting_timestamp - existing_timestamp).total_seconds())
+
+        # If claims are within 5 seconds of each other, it's a simultaneous conflict
+        SIMULTANEITY_THRESHOLD_SECONDS = 5
+
+        if time_diff <= SIMULTANEITY_THRESHOLD_SECONDS:
+            self.logger.warning(
+                f"Simultaneous claim conflict detected for task {task_id}: "
+                f"{requesting_zone} vs {existing_claim.claimed_by} "
+                f"(time diff: {time_diff:.2f}s)"
+            )
+
+            # Strategy: Earliest timestamp wins (T128)
+            if requesting_timestamp < existing_timestamp:
+                # Requesting zone wins - force release existing claim
+                self.logger.info(
+                    f"Conflict resolution: {requesting_zone} wins (earlier timestamp) "
+                    f"for task {task_id}"
+                )
+
+                # Update existing claim to released
+                existing_claim.status = "conflict_resolved"
+                existing_claim.released_at = datetime.now().isoformat()
+                existing_claim.released_by = "system_conflict_resolution"
+
+                # Write updated claim
+                self._write_claim_file(existing_claim)
+
+                # Log conflict resolution
+                self._log_claim_event({
+                    "event": "claim_conflict_resolved",
+                    "task_id": task_id,
+                    "winner": requesting_zone,
+                    "loser": existing_claim.claimed_by,
+                    "resolution_strategy": "earliest_timestamp_wins",
+                    "time_diff_seconds": time_diff,
+                    "requesting_timestamp": requesting_timestamp.isoformat(),
+                    "existing_timestamp": existing_timestamp,
+                    "timestamp": datetime.now().isoformat()
+                })
+
+                return True  # Requesting zone wins
+
+            else:
+                # Existing claim wins - deny request
+                self.logger.info(
+                    f"Conflict resolution: {existing_claim.claimed_by} wins (earlier timestamp) "
+                    f"for task {task_id}"
+                )
+
+                # Log conflict resolution
+                self._log_claim_event({
+                    "event": "claim_conflict_resolved",
+                    "task_id": task_id,
+                    "winner": existing_claim.claimed_by,
+                    "loser": requesting_zone,
+                    "resolution_strategy": "earliest_timestamp_wins",
+                    "time_diff_seconds": time_diff,
+                    "requesting_timestamp": requesting_timestamp.isoformat(),
+                    "existing_timestamp": existing_timestamp,
+                    "timestamp": datetime.now().isoformat()
+                })
+
+                return False  # Existing claim wins
+
+        else:
+            # Not a simultaneous conflict - existing claim is clearly first
+            return False
 
     def _write_claim_file(self, claim: Claim) -> None:
         """Write claim to file in Claims/ directory."""
