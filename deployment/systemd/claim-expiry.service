@@ -1,0 +1,24 @@
+[Unit]
+Description=AI Employee Claim Expiry Service
+Documentation=https://github.com/DanishHaji/Personal-AI-Employee-Hackathon-0
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 -m src.services.claim_manager expire --vault-path /opt/ai-employee --zone cloud
+WorkingDirectory=/opt/ai-employee
+EnvironmentFile=/opt/ai-employee/.env.cloud
+User=aiemployee
+StandardOutput=journal
+StandardError=journal
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/ai-employee/Claims
+ReadWritePaths=/opt/ai-employee/Logs
+
+[Install]
+WantedBy=multi-user.target

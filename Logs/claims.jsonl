@@ -1,0 +1,2 @@
+{"event": "claim_created", "claim_id": "CLAIM_20260306_012509_EMAIL_TEST_001", "task_id": "EMAIL_TEST_001", "claimed_by": "cloud", "expires_at": "2026-03-06T01:40:09.260202", "timestamp": "2026-03-06T01:25:09.268233"}
+{"event": "claim_expired", "claim_id": "CLAIM_20260306_012509_EMAIL_TEST_001", "task_id": "EMAIL_TEST_001", "claimed_by": "cloud", "timestamp": "2026-03-06T01:45:01.953585"}

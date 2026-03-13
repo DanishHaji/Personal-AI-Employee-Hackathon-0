@@ -1,0 +1,33 @@
+[Unit]
+Description=AI Employee Health Monitor Service
+Documentation=https://github.com/DanishHaji/Personal-AI-Employee-Hackathon-0
+After=network.target
+Wants=vault-sync.timer claim-expiry.timer
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 -m src.services.health_monitor start --vault-path /opt/ai-employee --instance cloud --interval 60
+WorkingDirectory=/opt/ai-employee
+EnvironmentFile=/opt/ai-employee/.env.cloud
+User=aiemployee
+Group=aiemployee
+
+# Restart policy
+Restart=always
+RestartSec=10s
+
+# Watchdog configuration
+WatchdogSec=120s
+NotifyAccess=all
+
+# Resource limits
+CPUQuota=20%
+MemoryMax=512M
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=health-monitor
+
+[Install]
+WantedBy=multi-user.target

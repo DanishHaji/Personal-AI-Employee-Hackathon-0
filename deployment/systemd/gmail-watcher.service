@@ -1,0 +1,33 @@
+[Unit]
+Description=AI Employee Gmail Watcher Service
+Documentation=https://github.com/DanishHaji/Personal-AI-Employee-Hackathon-0
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 -m src.watchers.gmail_watcher --mode continuous --vault-path /opt/ai-employee
+WorkingDirectory=/opt/ai-employee
+EnvironmentFile=/opt/ai-employee/.env.cloud
+User=aiemployee
+Group=aiemployee
+
+# Restart policy
+Restart=always
+RestartSec=30s
+
+# Resource limits
+CPUQuota=15%
+MemoryMax=384M
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=gmail-watcher
+
+# Security
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

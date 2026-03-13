@@ -1,0 +1,21 @@
+[Unit]
+Description=Vault Sync Timer (every 5 minutes)
+Documentation=https://github.com/DanishHaji/Personal-AI-Employee-Hackathon-0
+Requires=vault-sync.service
+
+[Timer]
+# Run 1 minute after boot
+OnBootSec=1min
+
+# Run every 5 minutes after the last activation
+OnUnitActiveSec=5min
+
+# Allow up to 10 seconds of timing imprecision
+AccuracySec=10s
+
+# If the system was off when the timer should have triggered,
+# trigger it immediately on boot
+Persistent=true
+
+[Install]
+WantedBy=timers.target

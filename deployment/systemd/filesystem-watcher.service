@@ -1,0 +1,33 @@
+[Unit]
+Description=AI Employee Filesystem Watcher Service
+Documentation=https://github.com/DanishHaji/Personal-AI-Employee-Hackathon-0
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 -m src.watchers.filesystem_watcher --mode continuous --vault-path /opt/ai-employee --watch-dir /opt/ai-employee/Cloud_Dropzone
+WorkingDirectory=/opt/ai-employee
+EnvironmentFile=/opt/ai-employee/.env.cloud
+User=aiemployee
+Group=aiemployee
+
+# Restart policy
+Restart=always
+RestartSec=30s
+
+# Resource limits
+CPUQuota=10%
+MemoryMax=256M
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=filesystem-watcher
+
+# Security
+NoNewPrivileges=true
+PrivateTmp=true
+ReadWritePaths=/opt/ai-employee/Cloud_Dropzone /opt/ai-employee/Needs_Action
+
+[Install]
+WantedBy=multi-user.target

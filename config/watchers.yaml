@@ -1,0 +1,241 @@
+# Watcher Configuration for Personal AI Employee - Platinum Tier
+# Platinum Tier US6 - T087: Watcher configuration with TTLs and retry settings
+
+# Global watcher settings
+global:
+  # Default check interval for all watchers (seconds)
+  default_check_interval: 120  # 2 minutes
+
+  # Heartbeat frequency (seconds)
+  heartbeat_interval: 60
+
+  # Health check settings
+  health_check_enabled: true
+  health_check_interval: 60  # 1 minute
+
+  # Error handling
+  max_consecutive_errors: 5
+  error_backoff_multiplier: 2
+  max_backoff_seconds: 300  # 5 minutes
+
+# Gmail Watcher Configuration
+gmail_watcher:
+  enabled: true
+  mode: continuous  # "once" or "continuous"
+
+  # Check interval (seconds)
+  check_interval: 120  # 2 minutes
+
+  # Priority detection
+  urgent_keywords:
+    - urgent
+    - asap
+    - important
+    - critical
+    - invoice
+    - payment
+    - help
+    - deadline
+    - action required
+    - time sensitive
+
+  # Gmail API rate limiting
+  api_rate_limit:
+    enabled: true
+    max_requests_per_minute: 250  # Gmail API default
+    backoff_on_429: true
+    initial_backoff_seconds: 1
+    max_backoff_seconds: 300  # 5 minutes
+
+  # Retry settings
+  retry:
+    max_retries: 3
+    retry_delay_seconds: 10
+
+  # Resource limits
+  resources:
+    max_memory_mb: 384
+    max_cpu_percent: 15
+
+  # Instance restrictions
+  allowed_instances:
+    - local
+    - cloud  # Gmail watcher runs on both instances
+
+# Filesystem Watcher Configuration
+filesystem_watcher:
+  enabled: true
+  mode: continuous
+
+  # Check interval (seconds) - for watchdog health monitoring
+  check_interval: 10
+
+  # Watch directory (overridden by instance config)
+  watch_directories:
+    local: "Inbox"  # Local instance watches Inbox
+    cloud: "Cloud_Dropzone"  # Cloud instance watches Cloud_Dropzone
+
+  # File type quarantine settings
+  quarantine:
+    enabled: true
+    unsafe_extensions:
+      - .exe
+      - .dmg
+      - .app
+      - .bat
+      - .sh
+      - .cmd
+      - .msi
+      - .dll
+      - .scr
+      - .vbs
+
+  # Retry settings
+  retry:
+    max_retries: 3
+    retry_delay_seconds: 5
+
+  # Resource limits
+  resources:
+    max_memory_mb: 256
+    max_cpu_percent: 10
+
+  # Instance restrictions
+  allowed_instances:
+    - local
+    - cloud  # Filesystem watcher runs on both instances
+
+# WhatsApp Watcher Configuration
+whatsapp_watcher:
+  enabled: true
+  mode: continuous
+
+  # Check interval (seconds)
+  check_interval: 60  # 1 minute (more frequent for messaging)
+
+  # Priority detection
+  urgent_keywords:
+    - urgent
+    - asap
+    - emergency
+    - help
+
+  # Retry settings
+  retry:
+    max_retries: 5
+    retry_delay_seconds: 30
+
+  # Resource limits
+  resources:
+    max_memory_mb: 512
+    max_cpu_percent: 20
+
+  # Instance restrictions - CRITICAL: WhatsApp ONLY on local (T086)
+  allowed_instances:
+    - local  # WhatsApp watcher NEVER runs on cloud (secrets required)
+
+  # Session requirements
+  requires_secrets: true
+  secret_paths:
+    - whatsapp_session/
+    - .wwebjs_auth/
+    - .wwebjs_cache/
+
+# Calendar Watcher Configuration (Gold Tier)
+calendar_watcher:
+  enabled: true
+  mode: continuous
+
+  # Check interval (seconds)
+  check_interval: 300  # 5 minutes
+
+  # Retry settings
+  retry:
+    max_retries: 3
+    retry_delay_seconds: 15
+
+  # Resource limits
+  resources:
+    max_memory_mb: 256
+    max_cpu_percent: 10
+
+  # Instance restrictions
+  allowed_instances:
+    - local
+    - cloud  # Calendar watcher can run on both
+
+# Health Monitor Settings
+health_monitor:
+  enabled: true
+
+  # Health check interval (seconds)
+  check_interval: 60  # 1 minute
+
+  # Watcher supervision
+  supervision:
+    enabled: true
+    restart_threshold_failures: 3  # Restart after 3 consecutive failures
+    restart_cooldown_seconds: 30
+
+  # Resource thresholds
+  thresholds:
+    cpu_percent: 90
+    memory_percent: 85
+    disk_percent: 90
+    disk_free_gb_warning: 10
+    disk_free_gb_critical: 5
+
+  # Alert settings
+  alerts:
+    enabled: true
+    rate_limit_minutes: 30
+    channels:
+      - email
+      - webhook
+
+  # Report generation
+  reports:
+    daily_enabled: true
+    daily_time: "00:00"  # Midnight
+    weekly_enabled: true
+    weekly_day: "monday"
+    weekly_time: "00:00"
+
+# Instance-specific overrides
+instances:
+  local:
+    # Local instance runs all watchers
+    enabled_watchers:
+      - gmail_watcher
+      - filesystem_watcher
+      - whatsapp_watcher  # WhatsApp ONLY on local
+      - calendar_watcher
+
+  cloud:
+    # Cloud instance runs subset of watchers (no WhatsApp)
+    enabled_watchers:
+      - gmail_watcher
+      - filesystem_watcher
+      - calendar_watcher
+
+    # Cloud-specific overrides
+    overrides:
+      filesystem_watcher:
+        watch_directory: "Cloud_Dropzone"
+
+# Logging configuration
+logging:
+  level: INFO
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+  # Health logging
+  health_log_enabled: true
+  health_log_path: "Logs/health.jsonl"
+
+  # Alert logging
+  alert_log_enabled: true
+  alert_log_path: "Logs/alerts.jsonl"
+
+  # Watcher event logging
+  watcher_events_enabled: true
+  watcher_events_path: "Logs/watchers.jsonl"

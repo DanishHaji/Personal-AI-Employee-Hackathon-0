@@ -1,0 +1,20 @@
+# Pre-commit hooks for Platinum Tier - Secret Detection
+# Prevents accidental commit of secrets to Git repository
+
+repos:
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
+        args: ['--baseline', '.secrets.baseline']
+        exclude: |
+          (?x)(
+              ^uv\.lock$|
+              ^\.venv/|
+              ^\.pytest_cache/|
+              ^test-vault/|
+              ^specs/|
+              ^history/prompts/|
+              ^deployment/|
+              \.md$
+          )
